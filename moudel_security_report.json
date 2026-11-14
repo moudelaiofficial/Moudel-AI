@@ -1,0 +1,187 @@
+{
+  "tool": "Moudel AI consolidated authorized security screening",
+  "generated_at": "2026-11-14T09:06:19.866317+00:00",
+  "target": "http://127.0.0.1:8000",
+  "scope": "Automated, non-destructive screening only. Not a full OWASP Top 10 audit, penetration test, or certification.",
+  "limitations": [
+    "No automated scanner can prove absence of vulnerabilities.",
+    "IDOR test requires two isolated test accounts and user-owned resource paths.",
+    "SQLi/XSS checks are low-impact indicators, not exploit validation.",
+    "Load test measures only the selected endpoint and does not establish maximum concurrent users.",
+    "CSRF, SSRF, stored XSS, business-logic flaws, dependency scanning, secret-history scanning and full RLS testing require separate validation."
+  ],
+  "findings": [
+    {
+      "category": "A05",
+      "severity": "LOW",
+      "title": "Missing CSP",
+      "detail": "No content-security-policy response header.",
+      "recommendation": "Define a CSP matching the deployed frontend; begin in Report-Only mode.",
+      "evidence": ""
+    },
+    {
+      "category": "A05",
+      "severity": "LOW",
+      "title": "Missing X-Content-Type-Options",
+      "detail": "No x-content-type-options response header.",
+      "recommendation": "Set X-Content-Type-Options: nosniff.",
+      "evidence": ""
+    },
+    {
+      "category": "A05",
+      "severity": "LOW",
+      "title": "Missing Referrer-Policy",
+      "detail": "No referrer-policy response header.",
+      "recommendation": "Set a restrictive Referrer-Policy, e.g. strict-origin-when-cross-origin.",
+      "evidence": ""
+    },
+    {
+      "category": "A05",
+      "severity": "LOW",
+      "title": "Missing Permissions-Policy",
+      "detail": "No permissions-policy response header.",
+      "recommendation": "Disable browser features the application does not use.",
+      "evidence": ""
+    },
+    {
+      "category": "A05",
+      "severity": "INFO",
+      "title": "Server technology disclosure",
+      "detail": "Server=uvicorn; X-Powered-By=",
+      "recommendation": "Remove unnecessary framework/version disclosure where practical.",
+      "evidence": ""
+    },
+    {
+      "category": "A05",
+      "severity": "INFO",
+      "title": "Operational endpoint reachable",
+      "detail": "/openapi.json returned HTTP 200.",
+      "recommendation": "Decide whether this endpoint should be public; restrict internal endpoints.",
+      "evidence": ""
+    },
+    {
+      "category": "A05",
+      "severity": "INFO",
+      "title": "Operational endpoint reachable",
+      "detail": "/docs returned HTTP 200.",
+      "recommendation": "Decide whether this endpoint should be public; restrict internal endpoints.",
+      "evidence": ""
+    },
+    {
+      "category": "A05",
+      "severity": "INFO",
+      "title": "Operational endpoint reachable",
+      "detail": "/redoc returned HTTP 200.",
+      "recommendation": "Decide whether this endpoint should be public; restrict internal endpoints.",
+      "evidence": ""
+    },
+    {
+      "category": "A04",
+      "severity": "INFO",
+      "title": "No rate limit observed in gentle probe",
+      "detail": "15 sequential requests did not receive HTTP 429; this does not prove rate limiting is absent.",
+      "recommendation": "Verify configured limits independently, especially login, reset, search and expensive routes.",
+      "evidence": ""
+    }
+  ],
+  "additional_results": [
+    {
+      "test": "baseline",
+      "http_status": 404
+    },
+    {
+      "test": "header:HSTS",
+      "status": "SKIPPED",
+      "reason": "Target is HTTP; verify on HTTPS production host."
+    },
+    {
+      "test": "cors_untrusted_origin",
+      "status": "NO_REFLECTION_OBSERVED",
+      "http_status": 400,
+      "allow_origin": null
+    },
+    {
+      "test": "path:/openapi.json",
+      "http_status": 200
+    },
+    {
+      "test": "path:/docs",
+      "http_status": 200
+    },
+    {
+      "test": "path:/redoc",
+      "http_status": 200
+    },
+    {
+      "test": "path:/health",
+      "http_status": 404
+    },
+    {
+      "test": "path:/health/live",
+      "http_status": 200
+    },
+    {
+      "test": "path:/health/ready",
+      "http_status": 503
+    },
+    {
+      "test": "path:/.env",
+      "http_status": 404
+    },
+    {
+      "test": "path:/.git/config",
+      "http_status": 404
+    },
+    {
+      "test": "path:/debug",
+      "http_status": 404
+    },
+    {
+      "test": "path:/metrics",
+      "http_status": 404
+    },
+    {
+      "test": "path:/admin",
+      "http_status": 404
+    },
+    {
+      "test": "unauthenticated:/api/v1/collections",
+      "http_status": 404
+    },
+    {
+      "test": "unauthenticated:/api/v1/library",
+      "http_status": 404
+    },
+    {
+      "test": "reflected_xss_probe",
+      "status": "NO_VERBATIM_REFLECTION",
+      "http_status": 200
+    },
+    {
+      "test": "two_account_idor",
+      "status": "SKIPPED",
+      "reason": "Set MOUDEL_TEST_TOKEN_A/B and MOUDEL_IDOR_PATH_A/B environment variables."
+    },
+    {
+      "test": "rate_limit",
+      "status": "NO_429_IN_GENTLE_PROBE",
+      "requests_sent": 15,
+      "http_statuses": {
+        "200": 15
+      }
+    },
+    {
+      "test": "bounded_load_test",
+      "status": "SKIPPED",
+      "reason": "Opt in with --load-test; do not run on production without approval."
+    }
+  ],
+  "severity_counts": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 4,
+    "INFO": 5
+  },
+  "tests_executed": 20
+}
