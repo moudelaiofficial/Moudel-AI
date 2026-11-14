@@ -23,10 +23,13 @@ import {
 } from 'lucide-react'
 
 import { searchResearchPapers } from '../../api/discover.js'
+
 import {
   savePaper,
   getSavedOpenAlexIds,
 } from '../../api/library.js'
+
+import { logResearchActivity } from '../../api/activity.js'
 
 const categories = [
   'All research',
@@ -85,6 +88,7 @@ function PaperCard({
   isSaved,
   onSave,
   isSaving,
+  onView,
 }) {
   return (
     <article className="border-b border-[#d9d2bf] py-7 first:pt-7">
@@ -186,6 +190,7 @@ function PaperCard({
               href={paper.paper_url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => onView(paper, 'paper')}
               className="flex items-center gap-1.5 text-xs text-[#7153c9] transition hover:text-[#5037a5]"
             >
               View paper
@@ -198,6 +203,7 @@ function PaperCard({
               href={paper.pdf_url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => onView(paper, 'pdf')}
               className="flex items-center gap-1.5 bg-[#1c1b19] px-3 py-2 text-xs text-white transition hover:bg-[#45377b]"
             >
               <FileText size={13} />
@@ -248,9 +254,25 @@ export default function DiscoverPage() {
         queryClient.invalidateQueries({
           queryKey: ['overview'],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['research-activity'],
+        }),
       ])
     },
   })
+
+  // Record an activity without blocking the user's interaction.
+  function trackActivity(activity) {
+    logResearchActivity(activity)
+      .then(() =>
+        queryClient.invalidateQueries({
+          queryKey: ['research-activity'],
+        })
+      )
+      .catch((error) => {
+        console.error('Could not record research activity:', error)
+      })
+  }
 
   // Search mode or discipline browsing mode.
   const hasActiveDiscovery =
@@ -294,6 +316,7 @@ export default function DiscoverPage() {
   const totalCount = data?.total_count ?? 0
   const totalPages = Math.ceil(totalCount / 10)
 
+  // Record a manually submitted search.
   function handleSearch(event) {
     event.preventDefault()
 
@@ -303,6 +326,14 @@ export default function DiscoverPage() {
 
     setPage(1)
     setSubmittedQuery(trimmedQuery)
+
+    trackActivity({
+      activityType: 'search_performed',
+      searchQuery: trimmedQuery,
+      metadata: {
+        category: activeCategory,
+      },
+    })
   }
 
   function handleCategoryChange(category) {
@@ -322,11 +353,21 @@ export default function DiscoverPage() {
     setPage(1)
   }
 
+  // Record suggested-topic searches.
   function exploreTopic(topic, category = activeCategory) {
     setQuery(topic)
     setActiveCategory(category)
     setPage(1)
     setSubmittedQuery(topic)
+
+    trackActivity({
+      activityType: 'search_performed',
+      searchQuery: topic,
+      metadata: {
+        category,
+        source: 'suggested_topic',
+      },
+    })
   }
 
   function clearFilters() {
@@ -340,6 +381,21 @@ export default function DiscoverPage() {
 
   function handleSavePaper(paper) {
     saveMutation.mutate(paper)
+  }
+
+  // Record paper views. OpenAlex papers may not yet have a
+  // corresponding local papers row, so paper_id remains null.
+  function handlePaperView(paper, destination) {
+    trackActivity({
+      activityType: 'paper_viewed',
+      metadata: {
+        openalex_id: paper.id,
+        title: paper.title,
+        paper_url: paper.paper_url ?? null,
+        pdf_url: paper.pdf_url ?? null,
+        destination,
+      },
+    })
   }
 
   return (
@@ -610,6 +666,7 @@ export default function DiscoverPage() {
                     paper={paper}
                     isSaved={savedOpenAlexIds.includes(paper.id)}
                     onSave={handleSavePaper}
+                    onView={handlePaperView}
                     isSaving={
                       saveMutation.isPending &&
                       saveMutation.variables?.id === paper.id
