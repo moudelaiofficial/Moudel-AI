@@ -39,7 +39,7 @@ app.include_router(
 async def delete_account(
     authorization: str | None = Header(default=None)
 ):
-    if not authorization.startswith("Bearer "):
+    if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
             detail="Invalid authorization header.",
