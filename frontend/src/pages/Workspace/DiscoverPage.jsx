@@ -1,6 +1,11 @@
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query'
+
 import {
   ArrowDownUp,
   ArrowLeft,
@@ -18,6 +23,10 @@ import {
 } from 'lucide-react'
 
 import { searchResearchPapers } from '../../api/discover.js'
+import {
+  savePaper,
+  getSavedOpenAlexIds,
+} from '../../api/library.js'
 
 const categories = [
   'All research',
@@ -71,7 +80,12 @@ function formatAuthors(authors) {
   return `${authors.slice(0, 3).join(', ')} and ${authors.length - 3} others`
 }
 
-function PaperCard({ paper }) {
+function PaperCard({
+  paper,
+  isSaved,
+  onSave,
+  isSaving,
+}) {
   return (
     <article className="border-b border-[#d9d2bf] py-7 first:pt-7">
       <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a8573]">
@@ -145,6 +159,28 @@ function PaperCard({ paper }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onSave(paper)}
+            disabled={isSaved || isSaving}
+            className={`flex items-center gap-1.5 border px-3 py-2 text-xs transition ${
+              isSaved
+                ? 'border-[#d9d2bf] bg-[#ece7db] text-[#716b61]'
+                : 'border-[#7153c9] text-[#7153c9] hover:bg-[#ece7f8]'
+            } disabled:cursor-not-allowed disabled:opacity-70`}
+          >
+            <Bookmark
+              size={13}
+              fill={isSaved ? 'currentColor' : 'none'}
+            />
+
+            {isSaved
+              ? 'Saved'
+              : isSaving
+                ? 'Saving...'
+                : 'Save to Library'}
+          </button>
+
           {paper.paper_url && (
             <a
               href={paper.paper_url}
@@ -175,6 +211,8 @@ function PaperCard({ paper }) {
 }
 
 export default function DiscoverPage() {
+  const queryClient = useQueryClient()
+
   const [query, setQuery] = useState('')
   const [submittedQuery, setSubmittedQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('All research')
@@ -183,9 +221,41 @@ export default function DiscoverPage() {
   const [page, setPage] = useState(1)
   const [showFilters, setShowFilters] = useState(false)
 
+  // Fetch saved OpenAlex IDs for the current user.
+  const {
+    data: savedOpenAlexIds = [],
+  } = useQuery({
+    queryKey: ['saved-openalex-ids'],
+    queryFn: getSavedOpenAlexIds,
+    staleTime: 30 * 1000,
+  })
+
+  // Save a paper and refresh dependent data.
+  const saveMutation = useMutation({
+    mutationFn: savePaper,
+
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['saved-openalex-ids'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['library'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['library-papers'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['overview'],
+        }),
+      ])
+    },
+  })
+
   // Search mode or discipline browsing mode.
   const hasActiveDiscovery =
-    Boolean(submittedQuery) || activeCategory !== 'All research'
+    Boolean(submittedQuery) ||
+    activeCategory !== 'All research'
 
   const {
     data,
@@ -237,11 +307,8 @@ export default function DiscoverPage() {
 
   function handleCategoryChange(category) {
     setActiveCategory(category)
-
-    // Switching discipline clears the previous search.
     setQuery('')
     setSubmittedQuery('')
-
     setPage(1)
   }
 
@@ -269,6 +336,10 @@ export default function DiscoverPage() {
     setYear('')
     setSortBy('relevance')
     setPage(1)
+  }
+
+  function handleSavePaper(paper) {
+    saveMutation.mutate(paper)
   }
 
   return (
@@ -454,6 +525,13 @@ export default function DiscoverPage() {
           )}
         </div>
 
+        {/* SAVE ERROR */}
+        {saveMutation.isError && (
+          <div className="mt-4 border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            Could not save paper: {saveMutation.error?.message}
+          </div>
+        )}
+
         {/* INITIAL STATE */}
         {!hasActiveDiscovery && (
           <div className="py-20 text-center">
@@ -527,7 +605,16 @@ export default function DiscoverPage() {
 
               <div>
                 {results.map((paper) => (
-                  <PaperCard key={paper.id} paper={paper} />
+                  <PaperCard
+                    key={paper.id}
+                    paper={paper}
+                    isSaved={savedOpenAlexIds.includes(paper.id)}
+                    onSave={handleSavePaper}
+                    isSaving={
+                      saveMutation.isPending &&
+                      saveMutation.variables?.id === paper.id
+                    }
+                  />
                 ))}
               </div>
 
