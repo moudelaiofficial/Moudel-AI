@@ -1167,30 +1167,72 @@ function Closing() {
   )
 }
 
+
 function Footer() {
-  const linkCls = `rounded-sm text-xs text-[#5f5b50] hover:text-[#1c1b19] ${ease} ${focusRing}`
+  const linkCls = `rounded-sm text-xs text-[#5f5b50] hover:text-[#1c1b19] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5b3fc4]`
+
+  const legalLinks = [
+    { label: 'Privacy Policy', to: '/privacy' },
+    { label: 'Terms & Conditions', to: '/terms' },
+    { label: 'Cookie Policy', to: '/cookies' },
+    { label: 'Data Deletion', to: '/data-deletion' },
+    { label: 'Research Disclaimer', to: '/research-disclaimer' },
+    { label: 'Acceptable Use', to: '/acceptable-use' },
+  ]
+
   return (
     <footer className="border-t border-[#d9d2bf] px-4 py-8 sm:px-8">
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-6 md:flex-row md:items-center md:justify-between">
-        <Brand />
-        <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-3">
-          {navItems.map((item) => (
-            <a key={item.href} href={item.href} className={linkCls}>
-              {item.label}
-            </a>
-          ))}
-          <Link to="/login" className={linkCls}>
-            Log in
-          </Link>
-          <Link to="/signup" className={linkCls}>
-            Get started
-          </Link>
-        </nav>
-        <p className="text-xs text-[#8a8573]">© {new Date().getFullYear()} Moudel AI</p>
+      <div className="mx-auto max-w-[1400px]">
+        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-3">
+            <Brand />
+            <p className="max-w-xs text-xs leading-5 text-[#8a8573]">
+              A research workspace for questions, sources, and ideas that grow together.
+            </p>
+          </div>
+
+          <div>
+            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8a8573]">
+              Explore
+            </p>
+            <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-5 gap-y-3">
+              {navItems.map((item) => (
+                <a key={item.href} href={item.href} className={linkCls}>
+                  {item.label}
+                </a>
+              ))}
+              <Link to="/login" className={linkCls}>Log in</Link>
+              <Link to="/signup" className={linkCls}>Get started</Link>
+            </nav>
+          </div>
+
+          <div>
+            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8a8573]">
+              Legal
+            </p>
+            <nav aria-label="Legal navigation" className="flex flex-col gap-3">
+              {legalLinks.map((item) => (
+                <Link key={item.to} to={item.to} className={linkCls}>
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-3 border-t border-[#d9d2bf] pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-[#8a8573]">
+            © {new Date().getFullYear()} Moudel AI. All rights reserved.
+          </p>
+          <p className="text-xs text-[#8a8573]">
+            Built for curious minds and persistent research.
+          </p>
+        </div>
       </div>
     </footer>
   )
 }
+
 
 /* ------------------------------------------------------------------ */
 /* Pages                                                               */

@@ -14,6 +14,15 @@ import RecentPage from './pages/Workspace/RecentPage.jsx'
 import CollectionsPage from './pages/Workspace/CollectionsPage.jsx'
 import SettingsPage from './pages/Workspace/SettingsPage.jsx'
 
+// Legal pages
+import PrivacyPolicy from './pages/legal/PrivacyPolicy.jsx'
+import TermsAndConditions from './pages/legal/TermsAndConditions.jsx'
+import CookiePolicy from './pages/legal/CookiePolicy.jsx'
+import DataDeletion from './pages/legal/DataDeletion.jsx'
+import ResearchDisclaimer from './pages/legal/ResearchDisclaimer.jsx'
+import AcceptableUse from './pages/legal/AcceptableUse.jsx'
+import ConsentPage from './pages/legal/ConsentPage.jsx'
+
 function NotFoundPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f6f2e8] text-[#1c1b19]">
@@ -30,10 +39,28 @@ function NotFoundPage() {
 export default function App() {
   return (
     <Routes>
+      {/* Public pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
 
+      {/* Legal pages */}
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsAndConditions />} />
+      <Route path="/cookies" element={<CookiePolicy />} />
+      <Route path="/data-deletion" element={<DataDeletion />} />
+      <Route path="/research-disclaimer" element={<ResearchDisclaimer />} />
+      <Route path="/acceptable-use" element={<AcceptableUse />} />
+      <Route
+        path="/consent"
+        element={
+          <ProtectedRoute>
+            <ConsentPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected workspace */}
       <Route
         path="/workspace"
         element={
@@ -50,6 +77,7 @@ export default function App() {
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 
+      {/* 404 */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

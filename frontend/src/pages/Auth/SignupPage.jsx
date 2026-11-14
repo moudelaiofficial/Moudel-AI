@@ -1,40 +1,63 @@
+
 import { ArrowLeft, ArrowRight, BookOpen, Check, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 
+import { LEGAL_VERSIONS } from '../../config/legalVersions.js'
+
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
   async function handleSignup(event) {
-  event.preventDefault()
-  setError('')
-  setSuccess('')
-  setLoading(true)
+    event.preventDefault()
+    setError('')
+    setSuccess('')
 
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    })
+    if (!acceptedTerms) {
+      setError('Please accept the Terms & Conditions before creating your account.')
+      return
+    }
 
-    if (error) throw error
+    if (loading) return
 
-    setSuccess(
-      data.session
-        ? 'Account created successfully!'
-        : 'Account created. Check your email for a verification link.',
-    )
-  } catch (err) {
-    setError(err.message || 'Could not create your account. Please try again.')
-  } finally {
-    setLoading(false)
+    setLoading(true)
+
+    try {
+      const acceptedAt = new Date().toISOString()
+
+      const { data, error: signupError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            terms_accepted: true,
+            terms_version: LEGAL_VERSIONS.terms,
+            terms_accepted_at: acceptedAt,
+          },
+        },
+      })
+
+      if (signupError) throw signupError
+
+      setSuccess(
+        data.session
+          ? 'Account created successfully!'
+          : 'Account created. Check your email for a verification link.',
+      )
+    } catch (err) {
+      setError(err?.message || 'Could not create your account. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
-}
+
   return (
     <main className="min-h-screen bg-[#f8f6f0] text-[#1c1b19]">
       <header className="flex h-[72px] items-center justify-between border-b border-[#e5dfd3] px-5 sm:px-10">
@@ -47,13 +70,17 @@ export default function SignupPage() {
           </span>
         </Link>
 
-        <Link to="/" className="flex items-center gap-2 text-sm text-[#716b61] transition hover:text-black">
+        <Link
+          to="/"
+          className="flex items-center gap-2 text-sm text-[#716b61] transition hover:text-black"
+        >
           <ArrowLeft size={16} />
           Back to home
         </Link>
       </header>
 
       <section className="mx-auto grid min-h-[calc(100vh-73px)] max-w-6xl items-center gap-12 px-5 py-12 md:grid-cols-[1fr_440px] md:px-10">
+        {/* Left introduction */}
         <div className="hidden md:block">
           <p className="mb-6 text-xs uppercase tracking-[0.22em] text-violet-600">
             Your research, with room to grow
@@ -74,7 +101,10 @@ export default function SignupPage() {
               'Save papers and the ideas they inspire',
               'Build your understanding over time',
             ].map((item) => (
-              <div key={item} className="flex items-center gap-3 text-sm text-[#514c44]">
+              <div
+                key={item}
+                className="flex items-center gap-3 text-sm text-[#514c44]"
+              >
                 <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#d9d0c2]">
                   <Check size={13} className="text-violet-600" />
                 </span>
@@ -88,6 +118,7 @@ export default function SignupPage() {
           </div>
         </div>
 
+        {/* Signup form */}
         <div className="mx-auto w-full max-w-md">
           <div className="mb-8">
             <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[#e4ddcf] bg-white">
@@ -108,10 +139,15 @@ export default function SignupPage() {
           </div>
 
           <form className="space-y-5" onSubmit={handleSignup}>
+            {/* Email */}
             <div>
-              <label htmlFor="signup-email" className="mb-2 block text-sm font-medium">
+              <label
+                htmlFor="signup-email"
+                className="mb-2 block text-sm font-medium"
+              >
                 Email address
               </label>
+
               <input
                 id="signup-email"
                 type="email"
@@ -124,10 +160,15 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* Password */}
             <div>
-              <label htmlFor="signup-password" className="mb-2 block text-sm font-medium">
+              <label
+                htmlFor="signup-password"
+                className="mb-2 block text-sm font-medium"
+              >
                 Password
               </label>
+
               <div className="relative">
                 <input
                   id="signup-password"
@@ -140,48 +181,108 @@ export default function SignupPage() {
                   placeholder="At least 8 characters"
                   className="h-12 w-full rounded-lg border border-[#ded7ca] bg-white px-4 pr-12 text-sm outline-none transition placeholder:text-[#aaa296] focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword((visible) => !visible)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
                   className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8c8478] hover:text-black"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
               <p className="mt-2 text-xs text-[#8c8478]">
                 Use at least 8 characters.
               </p>
             </div>
-            {error && (
-                <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                    {error}
-                </p>
-                )}
 
-                {success && (
-                <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
-                    {success}
-                </p>
-                )}
-                <button
-                type="submit"
-                disabled={loading}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1c1b19] px-5 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+            {/* Legal consent */}
+            <div className="rounded-xl border border-[#e4ddcf] bg-white/70 p-4">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(event) => setAcceptedTerms(event.target.checked)}
+                  required
+                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-violet-600"
+                />
+
+                <span className="text-sm leading-6 text-[#514c44]">
+                  I have read and agree to the{' '}
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-violet-700 underline underline-offset-2 hover:text-violet-900"
+                  >
+                    Terms & Conditions
+                  </Link>
+                  .
+                </span>
+              </label>
+
+              <p className="mt-3 pl-7 text-xs leading-5 text-[#8c8478]">
+                Please review our{' '}
+                <Link
+                  to="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-violet-700 underline underline-offset-2 hover:text-violet-900"
                 >
-                {loading ? 'Creating account…' : 'Create account'}
-                {!loading && <ArrowRight size={16} />}
-                </button>
+                  Privacy Policy
+                </Link>
+                {' '}to understand how your information is handled.
+              </p>
 
-            <p className="text-center text-xs leading-5 text-[#8c8478]">
-              By continuing, you agree to our Terms of Service and Privacy Policy.
-              These links will be connected when those pages are implemented.
-            </p>
+              <div className="mt-3 border-t border-[#e9e3d8] pt-3 pl-7">
+                <Link
+                  to="/cookies"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#716b61] underline underline-offset-2 hover:text-violet-700"
+                >
+                  Cookie Policy
+                </Link>
+              </div>
+            </div>
+
+            {/* Feedback */}
+            {error && (
+              <p
+                role="alert"
+                className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+              >
+                {error}
+              </p>
+            )}
+
+            {success && (
+              <p
+                role="status"
+                className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
+              >
+                {success}
+              </p>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading || !acceptedTerms}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1c1b19] px-5 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? 'Creating account…' : 'Create account'}
+              {!loading && <ArrowRight size={16} />}
+            </button>
           </form>
 
           <div className="my-7 flex items-center gap-4">
             <div className="h-px flex-1 bg-[#e4ddcf]" />
-            <span className="text-xs text-[#8c8478]">Already have an account?</span>
+            <span className="text-xs text-[#8c8478]">
+              Already have an account?
+            </span>
             <div className="h-px flex-1 bg-[#e4ddcf]" />
           </div>
 
