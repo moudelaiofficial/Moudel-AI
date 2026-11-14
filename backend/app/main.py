@@ -11,11 +11,12 @@ app = FastAPI(
     title=settings.app_name,
 )
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://moudel-ai.vercel.app/",
+        "https://moudel-ai.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
