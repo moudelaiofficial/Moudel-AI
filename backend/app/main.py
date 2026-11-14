@@ -37,7 +37,7 @@ app.include_router(
 
 @app.delete("/api/v1/account")
 async def delete_account(
-    authorization: str = Header(...),
+    authorization: str | None = Header(default=None)
 ):
     if not authorization.startswith("Bearer "):
         raise HTTPException(
