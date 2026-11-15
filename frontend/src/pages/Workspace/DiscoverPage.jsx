@@ -83,6 +83,7 @@ function formatAuthors(authors) {
   return `${authors.slice(0, 3).join(', ')} and ${authors.length - 3} others`
 }
 
+
 function PaperCard({
   paper,
   isSaved,
@@ -90,6 +91,10 @@ function PaperCard({
   isSaving,
   onView,
 }) {
+  const [isAbstractExpanded, setIsAbstractExpanded] = useState(false)
+
+  const hasLongAbstract = (paper.abstract?.length ?? 0) > 250
+
   return (
     <article className="border-b border-[#d9d2bf] py-7 first:pt-7">
       <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8a8573]">
@@ -123,9 +128,30 @@ function PaperCard({
       </p>
 
       {paper.abstract ? (
-        <p className="mt-4 line-clamp-4 text-sm leading-7 text-[#716b61]">
-          {paper.abstract}
-        </p>
+        <div className="mt-4">
+          <p
+            className={`text-sm leading-7 text-[#716b61] ${
+              isAbstractExpanded ? '' : 'line-clamp-4'
+            }`}
+          >
+            {paper.abstract}
+          </p>
+
+          {hasLongAbstract && (
+            <button
+              type="button"
+              onClick={() =>
+                setIsAbstractExpanded((current) => !current)
+              }
+              aria-expanded={isAbstractExpanded}
+              className="mt-2 text-xs font-medium text-[#7153c9] underline-offset-4 transition hover:text-[#5037a5] hover:underline"
+            >
+              {isAbstractExpanded
+                ? 'Show less ↑'
+                : 'Read full abstract ↓'}
+            </button>
+          )}
+        </div>
       ) : (
         <p className="mt-4 text-sm italic text-[#a39b8e]">
           Abstract is not available for this paper.
@@ -215,6 +241,7 @@ function PaperCard({
     </article>
   )
 }
+
 
 export default function DiscoverPage() {
   const queryClient = useQueryClient()
