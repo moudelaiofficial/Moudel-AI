@@ -5,6 +5,7 @@ import {
   CornerDownRight,
   FileText,
   FolderOpen,
+  Languages,
   History,
   Link2,
   Menu,
@@ -14,8 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-// import ProtectedRoute from './pages/Auth/ProtectedRoute.jsx'
-// import WorkspacePage from './pages/Workspace/WorkspacePage.jsx'
+
 /* ------------------------------------------------------------------ */
 /* Moudel Research Journal                                             */
 /* paper #f6f2e8 · sheet #fffdf8 · ink #1c1b19 · rule #d9d2bf          */
@@ -29,6 +29,7 @@ const ease = 'transition-colors duration-150 motion-reduce:transition-none'
 const primaryBtn = `inline-flex items-center justify-center gap-2 rounded-full bg-[#1c1b19] px-7 py-4 text-sm font-medium text-white hover:bg-[#3b3830] ${ease} ${focusRing}`
 const textLink = `inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-[#1c1b19] underline decoration-[#bfb7a0] decoration-1 underline-offset-[6px] hover:decoration-[#5b3fc4] ${ease} ${focusRing}`
 const navLinkCls = `rounded-sm px-2.5 py-1 text-[13px] text-[#5f5b50] hover:text-[#1c1b19] ${ease} ${focusRing}`
+
 
 /* ------------------------------------------------------------------ */
 /* Content                                                             */
@@ -281,28 +282,32 @@ const features = [
 ]
 
 const ledger = [
-  { name: 'Persistent research workspace', status: 'Planned' },
-  { name: 'Discovery from a question', status: 'Planned' },
-  { name: 'ZERA, the research assistant', status: 'Upcoming', highlight: true },
-  { name: 'Malayalam and broader accessibility', status: 'Planned' },
+  { name: 'Authentication, collections and saved-paper APIs', status: 'Implemented' },
+  { name: 'Paper de-duplication, user-scoped access and rate limits', status: 'Implemented' },
+  { name: 'ZERA backend chat proxy', status: 'Implemented' },
+  { name: 'Unified PubMed, OpenAlex and arXiv discovery', status: 'In progress' },
+  { name: 'Persistent editor and research workspace', status: 'In progress' },
+  { name: 'ZERA chat panel in the frontend', status: 'In progress' },
+  { name: 'Malayalam query and response translation', status: 'In progress' },
+  { name: 'Explain Simply and chat with my collection', status: 'Planned' },
 ]
-
 /* ------------------------------------------------------------------ */
 /* Primitives                                                          */
 /* ------------------------------------------------------------------ */
 
-function BrandMark({ size = 28 }) {
+function BrandMark({ size = 32 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="4" fill="#fffdf8" stroke="#1c1b19" strokeWidth="1.5" />
-      <path
-        d="M7 24V15a4.5 4.5 0 0 1 9 0v9M16 15a4.5 4.5 0 0 1 9 0v9"
-        stroke="#1c1b19"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <circle cx="24.5" cy="7.5" r="2" fill="#5b3fc4" />
-    </svg>
+    <img
+      src="/moudel-favicon.png"
+      width={size}
+      height={size}
+      alt=""
+      aria-hidden="true"
+      className="shrink-0 object-contain"
+      onError={(event) => {
+        event.currentTarget.style.display = 'none'
+      }}
+    />
   )
 }
 
@@ -411,13 +416,13 @@ function Header() {
         {/* Log in / Get started: far right */}
         <div className="hidden items-center justify-end gap-3 md:flex md:flex-1">
           <Link to="/login" className={navLinkCls}>
-            Log in
+            {'Log in'}
           </Link>
           <Link
             to="/signup"
             className={`rounded-full bg-[#1c1b19] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#3b3830] ${ease} ${focusRing}`}
           >
-            Get started
+            {'Get started'}
           </Link>
         </div>
 
@@ -527,7 +532,7 @@ function Hero() {
     <section className="px-4 pb-20 pt-10 sm:px-8 lg:pb-28 lg:pt-14">
       <div className="mx-auto max-w-[1400px]">
         <ThreadRule />
-        <Meta className="mt-4">Moudel Research Journal · Nº 01 · Early development</Meta>
+        <Meta className="mt-4">{'Moudel Research Journal · Nº 01 · Building in public'}</Meta>
 
         <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-8">
           <Heading
@@ -535,11 +540,11 @@ function Hero() {
             tight
             className="text-[clamp(2.5rem,9vw,8rem)]! leading-[0.96]! lg:col-span-9"
           >
-            <span className="block">Research is</span>
+            <span className="block">{'Research is'}</span>
             <span className="block lg:pl-[12%]">
-              <em className="text-[#5b3fc4]!">more than</em>
+              <em className="text-[#5b3fc4]!">{'more than'}</em>
             </span>
-            <span className="block">finding answers.</span>
+            <span className="block">{'finding answers.'}</span>
           </Heading>
 
           <aside className="lg:col-span-3 lg:pt-6">
@@ -556,18 +561,18 @@ function Hero() {
         <div className="mt-16 grid gap-14 lg:mt-20 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-4">
             <p className="max-w-sm text-lg leading-8 text-[#3b3830]">
-              Moudel gives your questions, papers, and ideas a place to grow together.
+              {'Moudel brings your research questions, papers and ideas together in one workspace.'}
             </p>
             <div className="mt-8 flex flex-col items-start gap-5">
               <Link to="/signup" className={primaryBtn}>
-                Start a workspace <ArrowRight size={16} aria-hidden="true" />
+                {'Explore Moudel'} <ArrowRight size={16} aria-hidden="true" />
               </Link>
               <a href="#how-it-works" className={textLink}>
-                Explore the workflow <ArrowRight size={14} aria-hidden="true" />
+                {'Explore the workflow'} <ArrowRight size={14} aria-hidden="true" />
               </a>
             </div>
             <p className="mt-8 text-xs text-[#8a8573]">
-              Illustrative arrangement. Moudel is in early development.
+              {'Product preview. Features are being integrated in stages.'}
             </p>
           </div>
 
@@ -859,7 +864,7 @@ function Progress() {
           </div>
           <p className="max-w-md text-[15px] leading-7 text-[#5f5b50] lg:col-span-4 lg:col-start-9 lg:self-end">
             A question changes as you read. Moudel is being built to keep each step of that change
-            attached to the last one. This is an illustrative storyline.
+            attached to the last one. The timeline below describes the intended research flow, not a live product walkthrough.
           </p>
         </div>
 
@@ -1084,7 +1089,7 @@ function Zera() {
         <div className="lg:col-span-3">
           <Meta>About · Looking ahead</Meta>
           <p className="mt-4 inline-flex items-center rounded-full border border-[#5b3fc4] bg-[#ece8fa] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#3f2b94]">
-            ZERA · Upcoming
+            {'ZERA · Integration in progress'}
           </p>
         </div>
 
@@ -1096,13 +1101,10 @@ function Zera() {
             Later, an assistant that starts from <em className="text-[#5b3fc4]!">your</em> sources.
           </Heading>
           <p className="mt-6 max-w-xl text-[15px] leading-7 text-[#5f5b50]">
-            ZERA is the planned research assistant for Moudel. The ambition is intelligent help that
-            is informed by a researcher’s own sources, collections, and accumulated context,
-            rather than starting from nothing each time.
+            {'ZERA is Moudel’s research assistant. The separate ZERA service is connected through a backend chat proxy. The in-app chat experience, citation workflow and research-context integration are being developed.'}
           </p>
           <p className="mt-4 max-w-xl text-[15px] font-medium leading-7 text-[#1c1b19]">
-            None of that exists yet. There is no assistant on this page, and nothing here is
-            connected to retrieval or persistent memory.
+            {'The chat interface shown in the product plan is not represented as a working chat on this landing page. Collection-scoped conversations and persistent research context remain planned integration work.'}
           </p>
 
           <ul className="mt-12 border-t border-[#1c1b19]">
@@ -1167,10 +1169,8 @@ function Closing() {
   )
 }
 
-
 function Footer() {
-  const linkCls = `rounded-sm text-xs text-[#5f5b50] hover:text-[#1c1b19] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5b3fc4]`
-
+  const linkCls = `rounded-sm text-xs text-[#5f5b50] hover:text-[#1c1b19] ${ease} ${focusRing}`
   const legalLinks = [
     { label: 'Privacy Policy', to: '/privacy' },
     { label: 'Terms & Conditions', to: '/terms' },
@@ -1179,7 +1179,6 @@ function Footer() {
     { label: 'Research Disclaimer', to: '/research-disclaimer' },
     { label: 'Acceptable Use', to: '/acceptable-use' },
   ]
-
   return (
     <footer className="border-t border-[#d9d2bf] px-4 py-8 sm:px-8">
       <div className="mx-auto max-w-[1400px]">
@@ -1187,60 +1186,47 @@ function Footer() {
           <div className="space-y-3">
             <Brand />
             <p className="max-w-xs text-xs leading-5 text-[#8a8573]">
-              A research workspace for questions, sources, and ideas that grow together.
+              {'A research workspace for questions, sources, and ideas that grow together.'}
             </p>
           </div>
-
           <div>
-            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8a8573]">
-              Explore
-            </p>
+            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8a8573]">{'Explore'}</p>
             <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-5 gap-y-3">
               {navItems.map((item) => (
-                <a key={item.href} href={item.href} className={linkCls}>
-                  {item.label}
-                </a>
+                <a key={item.href} href={item.href} className={linkCls}>{item.label}</a>
               ))}
-              <Link to="/login" className={linkCls}>Log in</Link>
-              <Link to="/signup" className={linkCls}>Get started</Link>
+              <Link to="/login" className={linkCls}>{'Log in'}</Link>
+              <Link to="/signup" className={linkCls}>{'Get started'}</Link>
             </nav>
           </div>
-
           <div>
-            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8a8573]">
-              Legal
-            </p>
+            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.16em] text-[#8a8573]">{'Legal'}</p>
             <nav aria-label="Legal navigation" className="flex flex-col gap-3">
               {legalLinks.map((item) => (
-                <Link key={item.to} to={item.to} className={linkCls}>
-                  {item.label}
-                </Link>
+                <Link key={item.to} to={item.to} className={linkCls}>{item.label}</Link>
               ))}
             </nav>
           </div>
         </div>
-
         <div className="mt-8 flex flex-col gap-3 border-t border-[#d9d2bf] pt-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-[#8a8573]">
-            © {new Date().getFullYear()} Moudel AI. All rights reserved.
-          </p>
-          <p className="text-xs text-[#8a8573]">
-            Built for curious minds and persistent research.
-          </p>
+          <p className="text-xs text-[#8a8573]">© {new Date().getFullYear()} Moudel AI. {'All rights reserved.'}</p>
+          <p className="text-xs text-[#8a8573]">{'Built for curious minds and persistent research.'}</p>
         </div>
       </div>
     </footer>
   )
 }
 
-
 /* ------------------------------------------------------------------ */
 /* Pages                                                               */
 /* ------------------------------------------------------------------ */
 
 function HomePage() {
+  useEffect(() => {
+    document.documentElement.lang = 'en'
+  }, [])
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#f6f2e8] text-left font-sans tracking-normal text-[#1c1b19] antialiased">
+    <div lang="en" className="min-h-screen overflow-x-clip bg-[#f6f2e8] text-left font-sans tracking-normal text-[#1c1b19] antialiased">
       <Header />
       <main>
         <Hero />
@@ -1256,5 +1242,6 @@ function HomePage() {
     </div>
   )
 }
+
 
 export default HomePage
