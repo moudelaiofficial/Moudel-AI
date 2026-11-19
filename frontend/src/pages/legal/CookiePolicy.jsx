@@ -77,7 +77,7 @@ export default function CookiePolicy() {
 
       <section>
         <h2>8. Contact</h2>
-        <p>Contact: [INSERT OFFICIAL COMPANY EMAIL]</p>
+        <p>Contact:<a href="mailto:moudelai@gmail.com">moudelai@gmail.com</a></p>
       </section>
     </LegalLayout>
   )

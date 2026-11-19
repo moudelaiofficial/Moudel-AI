@@ -68,7 +68,7 @@ export default function DataDeletion() {
 
       <section>
         <h2>6. Contact</h2>
-        <p>Deletion requests: [INSERT OFFICIAL COMPANY EMAIL]</p>
+        <p>Deletion requests: <a href="mailto:moudelai@gmail.com">moudelai@gmail.com</a></p>
       </section>
     </LegalLayout>
   )

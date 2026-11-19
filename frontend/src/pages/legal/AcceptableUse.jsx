@@ -70,7 +70,7 @@ export default function AcceptableUse() {
         <p>
           If you discover a security issue, suspected abuse or
           violation of this policy, contact:
-          <strong> [INSERT OFFICIAL COMPANY EMAIL]</strong>
+          <strong><a href="mailto:moudelai@gmail.com">moudelai@gmail.com</a></strong>
         </p>
       </section>
     </LegalLayout>

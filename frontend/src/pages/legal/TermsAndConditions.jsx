@@ -132,8 +132,8 @@ export default function TermsAndConditions() {
           appropriate jurisdiction and dispute-resolution provisions
           must be confirmed before publication.
         </p>
-        <p>Contact: [INSERT OFFICIAL COMPANY EMAIL]</p>
-        <p>Legal operator: [INSERT FULL LEGAL NAME]</p>
+        <p>Contact:<a href="mailto:moudelai@gmail.com">moudelai@gmail.com</a></p>
+        {/* <p>Legal operator: [INSERT FULL LEGAL NAME]</p> */}
       </section>
     </LegalLayout>
   )

@@ -144,11 +144,11 @@ export default function PrivacyPolicy() {
         <h2>12. Contact</h2>
         <p>
           Privacy and legal enquiries:
-          <strong> [INSERT OFFICIAL COMPANY EMAIL]</strong>
+          <strong><a href="mailto:moudelai@gmail.com">moudelai@gmail.com</a></strong>
         </p>
-        <p>
+        {/* <p>
           Legal operator: [INSERT FULL LEGAL NAME OF FOUNDER OR OPERATING ENTITY]
-        </p>
+        </p> */}
       </section>
     </LegalLayout>
   )
