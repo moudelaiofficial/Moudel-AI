@@ -15,7 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-
+import SEO from '../../components/SEO.jsx'
 /* ------------------------------------------------------------------ */
 /* Moudel Research Journal                                             */
 /* paper #f6f2e8 · sheet #fffdf8 · ink #1c1b19 · rule #d9d2bf          */
@@ -1225,22 +1225,30 @@ function HomePage() {
   useEffect(() => {
     document.documentElement.lang = 'en'
   }, [])
-  return (
-    <div lang="en" className="min-h-screen overflow-x-clip bg-[#f6f2e8] text-left font-sans tracking-normal text-[#1c1b19] antialiased">
-      <Header />
-      <main>
-        <Hero />
-        <Constellation />
-        <Premise />
-        <Progress />
-        <Workspace />
-        <Features />
-        <Zera />
-        <Closing />
-      </main>
-      <Footer />
-    </div>
-  )
+return (
+  <div lang="en" className="min-h-screen overflow-x-clip bg-[#f6f2e8] text-left font-sans tracking-normal text-[#1c1b19] antialiased">
+    <SEO
+      title="Research Workspace for Papers and Ideas"
+      description="Explore academic papers, organize research sources, save notes, and develop ideas in Moudel AI, your intelligent research workspace."
+      path="/"
+    />
+
+    <Header />
+
+    <main>
+      <Hero />
+      <Constellation />
+      <Premise />
+      <Progress />
+      <Workspace />
+      <Features />
+      <Zera />
+      <Closing />
+    </main>
+
+    <Footer />
+  </div>
+)
 }
 
 
