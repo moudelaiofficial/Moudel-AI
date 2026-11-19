@@ -39,9 +39,11 @@ export default function Sidebar() {
     <aside className="hidden w-[250px] shrink-0 border-r border-[#d9d2bf] bg-[#f2eee3] px-5 py-6 md:flex md:flex-col">
       {/* BRAND */}
       <div className="flex items-center gap-2.5 px-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1c1b19] font-serif text-xl italic text-white">
-          m
-        </div>
+        <img
+          src="/moudel-favicon.png"
+          alt="Moudel AI logo"
+          className="h-9 w-9 shrink-0 object-contain"
+        />
 
         <span className="font-serif text-xl">
           Moudel <span className="text-violet-600">AI</span>

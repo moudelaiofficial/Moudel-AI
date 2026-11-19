@@ -5,6 +5,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App.jsx'
+import PageTracker from './components/analytics/PageTracker.jsx'
+import AnalyticsConsent from './components/analytics/AnalyticsConsent.jsx'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,6 +28,8 @@ createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+      <PageTracker/>
+      <AnalyticsConsent/>
         <App />
       </BrowserRouter>
     </QueryClientProvider>
