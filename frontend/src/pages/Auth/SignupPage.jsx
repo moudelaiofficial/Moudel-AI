@@ -61,14 +61,17 @@ export default function SignupPage() {
   return (
     <main className="min-h-screen bg-[#f8f6f0] text-[#1c1b19]">
       <header className="flex h-[72px] items-center justify-between border-b border-[#e5dfd3] px-5 sm:px-10">
-        <Link to="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#1c1b19] font-serif text-lg italic text-white">
-            m
-          </span>
-          <span className="font-serif text-lg">
-            Moudel <span className="text-violet-600">AI</span>
-          </span>
-        </Link>
+      <Link to="/" className="flex items-center gap-2.5">
+        <img
+          src="/moudel-favicon.png"
+          alt="Moudel AI logo"
+          className="h-9 w-9 object-contain"
+        />
+
+        <span className="font-serif text-lg">
+          Moudel <span className="text-violet-600">AI</span>
+        </span>
+      </Link>
 
         <Link
           to="/"
