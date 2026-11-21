@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+.font-borel {
+  font-family: 'Borel', cursive;
+}
+
+.font-editor {
+  font-family: 'JetBrains Mono', monospace;
+}
+
 :root {
   color-scheme: light;
 }

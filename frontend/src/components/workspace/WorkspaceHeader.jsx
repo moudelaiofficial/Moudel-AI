@@ -95,7 +95,7 @@ export default function WorkspaceHeader() {
           <div className="relative z-10 flex h-full w-[280px] flex-col border-r border-[#d9d2bf] bg-[#f2eee3] p-6">
             <div className="flex items-center justify-between">
               <span className="font-serif text-xl">
-                Moudel <span className="text-violet-600">AI</span>
+                Moudel <span className="text-violet-600"></span>
               </span>
               <button
                 type="button"

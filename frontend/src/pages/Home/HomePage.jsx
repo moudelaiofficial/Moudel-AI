@@ -320,7 +320,7 @@ function Brand() {
     >
       <BrandMark />
       <span className="font-serif text-lg tracking-tight text-[#1c1b19]">
-        Moudel<span className="text-[#5b3fc4]"> AI</span>
+        Moudel<span className="text-[#5b3fc4]"></span>
       </span>
     </Link>
   )

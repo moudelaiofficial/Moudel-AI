@@ -21,7 +21,7 @@ export default function LegalLayout({
       <header className="border-b border-[#ded8ca]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
           <Link to="/" className="font-serif text-2xl">
-            Moudel AI
+            Moudel
           </Link>
 
           <Link

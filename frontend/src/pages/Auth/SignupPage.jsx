@@ -69,7 +69,7 @@ export default function SignupPage() {
         />
 
         <span className="font-serif text-lg">
-          Moudel <span className="text-violet-600">AI</span>
+          Moudel <span className="text-violet-600"></span>
         </span>
       </Link>
 
