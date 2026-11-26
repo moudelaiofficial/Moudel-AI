@@ -21,6 +21,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "https://moudel-ai.vercel.app",
+        "https://moudelai.com",
+        "https://www.moudelai.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
