@@ -1,27 +1,37 @@
 
-import { ArrowLeft, ArrowRight, BookOpen, Check, Eye, EyeOff } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Check,
+  Eye,
+  EyeOff,
+} from 'lucide-react'
+
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 
 import { LEGAL_VERSIONS } from '../../config/legalVersions.js'
 
 export default function SignupPage() {
+  const navigate = useNavigate()
+
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
   async function handleSignup(event) {
     event.preventDefault()
     setError('')
-    setSuccess('')
 
     if (!acceptedTerms) {
-      setError('Please accept the Terms & Conditions before creating your account.')
+      setError(
+        'Please accept the Terms & Conditions before creating your account.'
+      )
       return
     }
 
@@ -32,27 +42,55 @@ export default function SignupPage() {
     try {
       const acceptedAt = new Date().toISOString()
 
-      const { data, error: signupError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            terms_accepted: true,
-            terms_version: LEGAL_VERSIONS.terms,
-            terms_accepted_at: acceptedAt,
+      const { data, error: signupError } =
+        await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              terms_accepted: true,
+              terms_version: LEGAL_VERSIONS.terms,
+              terms_accepted_at: acceptedAt,
+            },
           },
-        },
-      })
+        })
 
       if (signupError) throw signupError
 
-      setSuccess(
-        data.session
-          ? 'Account created successfully!'
-          : 'Account created. Check your email for a verification link.',
-      )
+      const successMessage = data.session
+        ? 'Your account has been created successfully. You can now log in.'
+        : 'Your account has been created. Please verify your email before logging in.'
+
+      // If Supabase automatically creates a session,
+      // clear it locally so the user must log in explicitly.
+      if (data.session) {
+        const { error: signOutError } =
+          await supabase.auth.signOut({
+            scope: 'local',
+          })
+
+        if (signOutError) {
+          console.error(
+            'Post-signup sign-out failed:',
+            signOutError
+          )
+        }
+      }
+
+      // Redirect to login after successful registration.
+      navigate('/login', {
+        replace: true,
+        state: {
+          signupSuccess: successMessage,
+        },
+      })
     } catch (err) {
-      setError(err?.message || 'Could not create your account. Please try again.')
+      console.error('Signup failed:', err)
+
+      setError(
+        err?.message ||
+          'Could not create your account. Please try again.'
+      )
     } finally {
       setLoading(false)
     }
@@ -61,17 +99,17 @@ export default function SignupPage() {
   return (
     <main className="min-h-screen bg-[#f8f6f0] text-[#1c1b19]">
       <header className="flex h-[72px] items-center justify-between border-b border-[#e5dfd3] px-5 sm:px-10">
-      <Link to="/" className="flex items-center gap-2.5">
-        <img
-          src="/moudel-favicon.png"
-          alt="Moudel AI logo"
-          className="h-9 w-9 object-contain"
-        />
+        <Link to="/" className="flex items-center gap-2.5">
+          <img
+            src="/moudel-favicon.png"
+            alt="Moudel AI logo"
+            className="h-9 w-9 object-contain"
+          />
 
-        <span className="font-serif text-lg">
-          Moudel <span className="text-violet-600"></span>
-        </span>
-      </Link>
+          <span className="font-serif text-lg">
+            Moudel <span className="text-violet-600"></span>
+          </span>
+        </Link>
 
         <Link
           to="/"
@@ -83,6 +121,7 @@ export default function SignupPage() {
       </header>
 
       <section className="mx-auto grid min-h-[calc(100vh-73px)] max-w-6xl items-center gap-12 px-5 py-12 md:grid-cols-[1fr_440px] md:px-10">
+
         {/* Left introduction */}
         <div className="hidden md:block">
           <p className="mb-6 text-xs uppercase tracking-[0.22em] text-violet-600">
@@ -111,6 +150,7 @@ export default function SignupPage() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#d9d0c2]">
                   <Check size={13} className="text-violet-600" />
                 </span>
+
                 {item}
               </div>
             ))}
@@ -142,6 +182,7 @@ export default function SignupPage() {
           </div>
 
           <form className="space-y-5" onSubmit={handleSignup}>
+
             {/* Email */}
             <div>
               <label
@@ -188,11 +229,17 @@ export default function SignupPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((visible) => !visible)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={
+                    showPassword ? 'Hide password' : 'Show password'
+                  }
                   aria-pressed={showPassword}
                   className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#8c8478] hover:text-black"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? (
+                    <EyeOff size={18} />
+                  ) : (
+                    <Eye size={18} />
+                  )}
                 </button>
               </div>
 
@@ -207,7 +254,9 @@ export default function SignupPage() {
                 <input
                   type="checkbox"
                   checked={acceptedTerms}
-                  onChange={(event) => setAcceptedTerms(event.target.checked)}
+                  onChange={(event) =>
+                    setAcceptedTerms(event.target.checked)
+                  }
                   required
                   className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-violet-600"
                 />
@@ -251,22 +300,13 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Feedback */}
+            {/* Error feedback */}
             {error && (
               <p
                 role="alert"
                 className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
               >
                 {error}
-              </p>
-            )}
-
-            {success && (
-              <p
-                role="status"
-                className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800"
-              >
-                {success}
               </p>
             )}
 
@@ -277,15 +317,18 @@ export default function SignupPage() {
               className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1c1b19] px-5 text-sm font-medium text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Creating account…' : 'Create account'}
+
               {!loading && <ArrowRight size={16} />}
             </button>
           </form>
 
           <div className="my-7 flex items-center gap-4">
             <div className="h-px flex-1 bg-[#e4ddcf]" />
+
             <span className="text-xs text-[#8c8478]">
               Already have an account?
             </span>
+
             <div className="h-px flex-1 bg-[#e4ddcf]" />
           </div>
 
