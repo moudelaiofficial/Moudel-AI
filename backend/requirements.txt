@@ -1,4 +1,3 @@
-
 fastapi
 uvicorn[standard]
 sqlalchemy[asyncio]
@@ -9,3 +8,4 @@ httpx
 pytest
 pytest-asyncio
 aiosqlite
+google-genai

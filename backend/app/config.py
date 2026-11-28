@@ -9,27 +9,32 @@ class Settings(BaseSettings):
     app_env: str = "development"
     api_v1_prefix: str = "/api/v1"
 
+    # Supabase
     supabase_url: str
     supabase_publishable_key: str
-
-    gemini_api_key: str
-    gemini_model: str = "gemini-2.5-flash"
-
-    openalex_api_key: str = ""
     supabase_service_role_key: str = ""
+
+    # Gemini
+    gemini_api_key: str
+    gemini_model: str = "gemini-3.8-flash"
+
+    gemini_fallback_models: str = (
+        "gemini-3.6-flash,"
+        "gemini-3.5-flash-lite,"
+        "gemini-2.5-flash,"
+        "gemini-2.5-flash-lite"
+    )
+    gemini_retries: int = 2
+    gemini_request_timeout_ms: int = 12000
+
+    # OpenAlex
+    openalex_api_key: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
-    gemini_fallback_models: str = (
-    "gemini-3.6-flash,gemini-3.5-flash-lite"
-    )
-
-    gemini_retries: int = 2
-    gemini_fallback_models: str = ""
-    gemini_request_timeout_ms: int = 12000
 
 
 @lru_cache
