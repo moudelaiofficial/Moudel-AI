@@ -28,6 +28,19 @@ SEARCH_STOP_WORDS = {
     "explain", "discuss", "describe",
 }
 
+TOPIC_METADATA_LISTS = (
+    "topics",
+    "topic_ids",
+    "topic_names",
+    "subfields",
+    "fields",
+    "domains",
+)
+
+
+# ============================================================
+# SUPABASE CONNECTION
+# ============================================================
 
 def get_headers(prefer: str | None = None):
     settings = get_settings()
@@ -63,6 +76,10 @@ def chunks(items: list, size: int = BATCH_SIZE):
     for index in range(0, len(items), size):
         yield items[index:index + size]
 
+
+# ============================================================
+# IDENTIFIER NORMALIZATION
+# ============================================================
 
 def normalize_doi(value: str | None):
     if not value:
@@ -117,22 +134,164 @@ def paper_identifiers(paper: dict):
     }
 
 
+# ============================================================
+# METADATA MERGING
+# ============================================================
+
+def merge_string_lists(*values):
+    """
+    Merge lists of strings while preserving order.
+    """
+
+    result = []
+    seen = set()
+
+    for value_list in values:
+        if not isinstance(value_list, list):
+            continue
+
+        for value in value_list:
+            if not isinstance(value, str) or not value.strip():
+                continue
+
+            normalized = value.strip()
+
+            key = normalized.casefold()
+
+            if key not in seen:
+                seen.add(key)
+                result.append(normalized)
+
+    return result
+
+
+def merge_topic_objects(*values):
+    """
+    Merge OpenAlex topic dictionaries using their topic IDs.
+
+    Topics without IDs are deduplicated using their display names.
+    Incoming non-empty metadata enriches existing topic records.
+    """
+
+    result = []
+    positions = {}
+
+    for topic_list in values:
+        if not isinstance(topic_list, list):
+            continue
+
+        for topic in topic_list:
+            if not isinstance(topic, dict):
+                continue
+
+            topic_id = topic.get("id")
+            display_name = topic.get("display_name")
+
+            if topic_id:
+                key = str(topic_id).casefold()
+            elif display_name:
+                key = str(display_name).casefold()
+            else:
+                continue
+
+            if key not in positions:
+                positions[key] = len(result)
+                result.append(dict(topic))
+                continue
+
+            index = positions[key]
+            previous = result[index]
+
+            merged = dict(previous)
+
+            for field, value in topic.items():
+                if value is None or value == "":
+                    continue
+
+                if isinstance(value, dict):
+                    old_nested = merged.get(field) or {}
+
+                    if isinstance(old_nested, dict):
+                        merged[field] = {
+                            **old_nested,
+                            **{
+                                nested_key: nested_value
+                                for nested_key, nested_value in value.items()
+                                if nested_value is not None
+                                and nested_value != ""
+                            },
+                        }
+                elif not merged.get(field):
+                    merged[field] = value
+
+            result[index] = merged
+
+    return result
+
+
+def merge_metadata(
+    old_metadata: dict | None,
+    new_metadata: dict | None,
+):
+    """
+    Merge metadata without losing existing topic classifications.
+    """
+
+    old_metadata = old_metadata or {}
+    new_metadata = new_metadata or {}
+
+    metadata = {
+        **old_metadata,
+        **{
+            key: value
+            for key, value in new_metadata.items()
+            if value is not None
+        },
+    }
+
+    for key in TOPIC_METADATA_LISTS:
+        old_values = old_metadata.get(key) or []
+        new_values = new_metadata.get(key) or []
+
+        if key == "topics":
+            merged = merge_topic_objects(
+                old_values,
+                new_values,
+            )
+        else:
+            merged = merge_string_lists(
+                old_values,
+                new_values,
+            )
+
+        if merged:
+            metadata[key] = merged
+
+    return metadata
+
+
+# ============================================================
+# EXISTING PAPER LOOKUP
+# ============================================================
+
 def _index_record(index: dict, record: dict):
     identifiers = paper_identifiers(record)
 
     for identifier_type, value in identifiers.items():
-        if value:
-            key = (identifier_type, value)
+        if not value:
+            continue
 
-            previous = index.get(key)
+        key = (identifier_type, value)
 
-            if previous and previous["id"] != record["id"]:
-                raise ValueError(
-                    f"Database identity conflict for {identifier_type}: "
-                    f"{value}"
-                )
+        previous = index.get(key)
 
-            index[key] = record
+        if previous and previous["id"] != record["id"]:
+            raise ValueError(
+                f"Database identity conflict for {identifier_type}: "
+                f"{value}"
+            )
+
+        index[key] = record
 
 
 async def fetch_existing_papers(
@@ -142,8 +301,7 @@ async def fetch_existing_papers(
     """
     Retrieve existing papers using OpenAlex ID, DOI and arXiv ID.
 
-    DOI matching uses PostgREST ilike for case-insensitive
-    matching. Results are verified using normalized DOI values.
+    Existing Supabase UUIDs are retained.
     """
 
     identifiers = {
@@ -159,6 +317,7 @@ async def fetch_existing_papers(
 
     existing = {}
 
+    # OpenAlex and arXiv identifiers can be fetched in batches.
     for column in ("openalex_id", "arxiv_id"):
         values = sorted(identifiers[column])
 
@@ -181,6 +340,7 @@ async def fetch_existing_papers(
             for record in response.json():
                 _index_record(existing, record)
 
+    # DOI lookup uses case-insensitive matching.
     for doi in sorted(identifiers["doi"]):
         response = await client.get(
             get_url("papers"),
@@ -201,11 +361,14 @@ async def fetch_existing_papers(
     return existing
 
 
-def find_existing_record(paper: dict, existing: dict):
+def find_existing_record(
+    paper: dict,
+    existing: dict,
+):
     """
-    Return one consistent existing record.
+    Find one consistent existing Supabase record.
 
-    Never automatically merge two different Supabase rows.
+    Never silently merge two different database rows.
     """
 
     matches = {}
@@ -229,12 +392,23 @@ def find_existing_record(paper: dict, existing: dict):
     return next(iter(matches.values()), None)
 
 
+# ============================================================
+# PAPER RECORD PREPARATION
+# ============================================================
+
 def prepare_paper_record(
     paper: dict,
     existing: dict | None = None,
 ):
     """
-    Merge incoming metadata without erasing useful existing data.
+    Merge incoming paper information with existing Supabase data.
+
+    Preserves:
+    - Existing UUID
+    - Existing useful abstracts
+    - DOI and arXiv identifiers
+    - Existing classifications
+    - All discovered OpenAlex topics
     """
 
     existing = existing or {}
@@ -242,45 +416,62 @@ def prepare_paper_record(
     old_metadata = existing.get("metadata") or {}
     new_metadata = paper.get("metadata") or {}
 
-    metadata = {
-        **old_metadata,
-        **{
-            key: value
-            for key, value in new_metadata.items()
-            if value is not None
-        },
-    }
+    metadata = merge_metadata(
+        old_metadata,
+        new_metadata,
+    )
 
     incoming_title = paper.get("title")
 
     if not incoming_title or incoming_title == "Untitled paper":
-        incoming_title = existing.get("title") or "Untitled paper"
+        incoming_title = (
+            existing.get("title")
+            or "Untitled paper"
+        )
 
-    authors = paper.get("authors") or existing.get("authors") or []
-
-    categories = (
-        paper.get("categories")
-        or existing.get("categories")
+    authors = (
+        paper.get("authors")
+        or existing.get("authors")
         or []
+    )
+
+    categories = merge_string_lists(
+        existing.get("categories") or [],
+        paper.get("categories") or [],
     )
 
     return {
         "title": incoming_title,
         "authors": authors,
-        "abstract": paper.get("abstract") or existing.get("abstract"),
-        "doi": paper.get("doi") or existing.get("doi"),
+        "abstract": (
+            paper.get("abstract")
+            or existing.get("abstract")
+        ),
+        "doi": (
+            paper.get("doi")
+            or existing.get("doi")
+        ),
         "arxiv_id": (
             paper.get("arxiv_id")
             or existing.get("arxiv_id")
         ),
-        "source": paper.get("source") or existing.get("source"),
+        "source": (
+            paper.get("source")
+            or existing.get("source")
+        ),
         "publication_date": (
             paper.get("publication_date")
             or existing.get("publication_date")
         ),
         "categories": categories,
-        "paper_url": paper.get("paper_url") or existing.get("paper_url"),
-        "pdf_url": paper.get("pdf_url") or existing.get("pdf_url"),
+        "paper_url": (
+            paper.get("paper_url")
+            or existing.get("paper_url")
+        ),
+        "pdf_url": (
+            paper.get("pdf_url")
+            or existing.get("pdf_url")
+        ),
         "openalex_id": (
             paper.get("openalex_id")
             or existing.get("openalex_id")
@@ -289,22 +480,30 @@ def prepare_paper_record(
     }
 
 
+# ============================================================
+# INSERT CONFLICT RECOVERY
+# ============================================================
+
 async def _resolve_insert_conflict(
     client: httpx.AsyncClient,
     batch: list[dict],
 ):
     """
-    Recover from a concurrent unique-index conflict.
-
-    Re-fetch records instead of creating duplicate identities.
+    Recover from concurrent unique-index conflicts.
     """
 
-    existing = await fetch_existing_papers(client, batch)
+    existing = await fetch_existing_papers(
+        client,
+        batch,
+    )
 
     resolved = {}
 
     for paper in batch:
-        record = find_existing_record(paper, existing)
+        record = find_existing_record(
+            paper,
+            existing,
+        )
 
         if not record:
             raise RuntimeError(
@@ -317,16 +516,20 @@ async def _resolve_insert_conflict(
     return resolved
 
 
+# ============================================================
+# SAVE PAPER BATCH
+# ============================================================
+
 async def save_paper_batch(papers: list[dict]):
     """
-    Save a batch of papers.
+    Save or update a batch of OpenAlex papers.
 
     Returns:
         {
             openalex_id: supabase_paper_uuid
         }
 
-    Existing UUIDs and relationships are preserved.
+    Existing records are enriched rather than duplicated.
     """
 
     if not papers:
@@ -335,7 +538,7 @@ async def save_paper_batch(papers: list[dict]):
     for paper in papers:
         if not paper.get("openalex_id"):
             raise ValueError(
-                "Cannot store an OpenAlex paper without openalex_id."
+                "Cannot store a paper without openalex_id."
             )
 
     unique_papers = {}
@@ -346,10 +549,18 @@ async def save_paper_batch(papers: list[dict]):
         if openalex_id in unique_papers:
             previous = unique_papers[openalex_id]
 
-            if paper_identifiers(previous) != paper_identifiers(paper):
+            if (
+                paper_identifiers(previous)
+                != paper_identifiers(paper)
+            ):
                 raise ValueError(
                     f"Conflicting incoming records for {openalex_id}"
                 )
+
+            unique_papers[openalex_id] = prepare_paper_record(
+                paper,
+                previous,
+            )
 
             continue
 
@@ -358,31 +569,39 @@ async def save_paper_batch(papers: list[dict]):
     papers = list(unique_papers.values())
 
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-        existing = await fetch_existing_papers(client, papers)
+        existing = await fetch_existing_papers(
+            client,
+            papers,
+        )
 
         resolved = {}
         updates = []
         inserts = []
 
         for paper in papers:
-            record = find_existing_record(paper, existing)
+            record = find_existing_record(
+                paper,
+                existing,
+            )
 
             if record:
                 paper_id = record["id"]
 
                 resolved[paper["openalex_id"]] = paper_id
 
-                updates.append(
-                    (
-                        paper_id,
-                        prepare_paper_record(paper, record),
-                    )
+                payload = prepare_paper_record(
+                    paper,
+                    record,
                 )
+
+                updates.append((paper_id, payload))
+
             else:
                 inserts.append(
                     prepare_paper_record(paper)
                 )
 
+        # Update existing records while preserving their UUIDs.
         for paper_id, payload in updates:
             response = await client.patch(
                 get_url("papers"),
@@ -395,6 +614,7 @@ async def save_paper_batch(papers: list[dict]):
 
             response.raise_for_status()
 
+        # Insert genuinely new papers in batches.
         for batch in chunks(inserts):
             response = await client.post(
                 get_url("papers"),
@@ -406,9 +626,11 @@ async def save_paper_batch(papers: list[dict]):
                 recovered = await _resolve_insert_conflict(
                     client,
                     [
-                        paper for paper in papers
+                        paper
+                        for paper in papers
                         if paper["openalex_id"] in {
-                            item["openalex_id"] for item in batch
+                            item["openalex_id"]
+                            for item in batch
                         }
                     ],
                 )
@@ -426,7 +648,9 @@ async def save_paper_batch(papers: list[dict]):
             }
 
             for item in batch:
-                record = returned_by_id.get(item.get("openalex_id"))
+                record = returned_by_id.get(
+                    item.get("openalex_id")
+                )
 
                 if not record:
                     raise RuntimeError(
@@ -443,15 +667,19 @@ async def save_paper_batch(papers: list[dict]):
     return resolved
 
 
+# ============================================================
+# CORPUS MEMBERSHIP
+# ============================================================
+
 async def link_paper_batch(
     corpus_id: str,
     paper_ids: list[str],
     discovery_query: str | None = None,
 ):
     """
-    Link papers to a corpus using the composite primary key.
+    Link papers to a corpus.
 
-    Repeated links are ignored.
+    The composite primary key prevents duplicate memberships.
     """
 
     if not paper_ids:
@@ -490,6 +718,10 @@ async def update_corpus_progress(
     corpus_id: str,
     updates: dict,
 ):
+    """
+    Update collection progress and checkpoints.
+    """
+
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
         response = await client.patch(
             get_url("research_corpora"),
@@ -508,13 +740,20 @@ async def update_corpus_progress(
 # ============================================================
 
 def extract_search_terms(query: str) -> list[str]:
-    """Extract useful searchable terms from a research query."""
+    """
+    Extract useful searchable terms from a research query.
+    """
 
-    words = re.findall(r"[a-zA-Z0-9-]+", query.lower())
+    words = re.findall(
+        r"[a-zA-Z0-9-]+",
+        query.lower(),
+    )
 
     terms = [
-        word for word in words
-        if len(word) > 1 and word not in SEARCH_STOP_WORDS
+        word
+        for word in words
+        if len(word) > 1
+        and word not in SEARCH_STOP_WORDS
     ]
 
     return list(dict.fromkeys(terms))[:8]
@@ -525,9 +764,13 @@ def rank_corpus_papers(
     query: str,
 ) -> list[dict]:
     """
-    Rank papers using title and abstract keyword relevance.
-
-    Citation count and publication date are secondary signals.
+    Rank papers using:
+    - Exact phrase matches
+    - Title relevance
+    - Abstract relevance
+    - OpenAlex topic metadata
+    - Citation count
+    - Publication date
     """
 
     terms = extract_search_terms(query)
@@ -536,8 +779,26 @@ def rank_corpus_papers(
     ranked = []
 
     for paper in papers:
-        title = (paper.get("title") or "").lower()
-        abstract = (paper.get("abstract") or "").lower()
+        title = (
+            paper.get("title") or ""
+        ).lower()
+
+        abstract = (
+            paper.get("abstract") or ""
+        ).lower()
+
+        metadata = paper.get("metadata") or {}
+
+        topic_text = " ".join(
+            str(value)
+            for key in (
+                "topic_names",
+                "subfields",
+                "fields",
+                "domains",
+            )
+            for value in (metadata.get(key) or [])
+        ).lower()
 
         score = 0
 
@@ -554,19 +815,27 @@ def rank_corpus_papers(
             if term in abstract:
                 score += 1
 
+            if term in topic_text:
+                score += 3
+
         if score > 0:
             ranked.append((score, paper))
 
     ranked.sort(
         key=lambda item: (
             item[0],
-            item[1].get("metadata", {}).get("citation_count", 0) or 0,
+            item[1].get(
+                "metadata", {}
+            ).get("citation_count", 0) or 0,
             item[1].get("publication_date") or "",
         ),
         reverse=True,
     )
 
-    return [paper for _, paper in ranked]
+    return [
+        paper
+        for _, paper in ranked
+    ]
 
 
 async def search_corpus_papers(
@@ -574,28 +843,42 @@ async def search_corpus_papers(
     limit: int = 50,
 ) -> list[dict]:
     """
-    Search the shared Supabase research library.
+    Search the shared research library.
 
-    Searches titles and abstracts across all stored research domains.
-    No corpus filter is applied, so interdisciplinary papers remain
-    discoverable regardless of their primary category.
+    Searches titles and abstracts across all stored domains.
+    The candidate pool is configurable independently of the
+    final number of papers returned.
     """
 
     if not query or not query.strip():
         return []
 
     if not 1 <= limit <= 100:
-        raise ValueError("limit must be between 1 and 100.")
+        raise ValueError(
+            "limit must be between 1 and 100."
+        )
 
     terms = extract_search_terms(query)
 
     if not terms:
         return []
 
+    settings = get_settings()
+
+    candidate_limit = getattr(
+        settings,
+        "corpus_retrieval_candidates",
+        400,
+    )
+
+    candidate_limit = max(
+        limit,
+        min(int(candidate_limit), 1000),
+    )
+
     conditions = []
 
     for term in terms:
-        # Escape PostgREST filter syntax characters.
         safe_term = (
             term.replace("\\", "\\\\")
             .replace("*", "\\*")
@@ -613,7 +896,7 @@ async def search_corpus_papers(
         "select": PAPER_SELECT,
         "or": f"({','.join(conditions)})",
         "abstract": "not.is.null",
-        "limit": min(limit * 4, 400),
+        "limit": candidate_limit,
     }
 
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
@@ -627,6 +910,9 @@ async def search_corpus_papers(
 
         papers = response.json()
 
-    ranked = rank_corpus_papers(papers, query)
+    ranked = rank_corpus_papers(
+        papers,
+        query,
+    )
 
     return ranked[:limit]

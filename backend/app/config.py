@@ -8,7 +8,11 @@ class Settings(BaseSettings):
     app_name: str = "Moudel AI API"
     app_env: str = "development"
     api_v1_prefix: str = "/api/v1"
-
+    corpus_page_size: int = 200
+    corpus_batch_size: int = 50
+    corpus_max_pages_per_run: int = 1
+    corpus_retrieval_candidates: int = 400
+    corpus_retrieval_limit: int = 100
     # Supabase
     supabase_url: str
     supabase_publishable_key: str

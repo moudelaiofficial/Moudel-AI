@@ -1,167 +1,155 @@
 
-import asyncio
+import os
 import json
+import asyncio
 import logging
-from functools import lru_cache
 
-from google import genai
-from google.genai import types
+import httpx
+from dotenv import load_dotenv
 
-from app.config import get_settings
-
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 
-@lru_cache
-def get_gemini_client():
-    settings = get_settings()
+# ============================================================
+# GROQ CONFIGURATION
+# ============================================================
 
-    return genai.Client(
-        api_key=settings.gemini_api_key,
-        http_options=types.HttpOptions(
-            timeout=settings.gemini_request_timeout_ms,
-        ),
-    )
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-def get_model_chain():
-    settings = get_settings()
+GROQ_QUERY_MODEL = os.getenv(
+    "GROQ_QUERY_MODEL",
+    "openai/gpt-oss-20b",
+)
 
-    fallbacks = [
-        model.strip()
-        for model in settings.gemini_fallback_models.split(",")
-        if model.strip()
-    ]
+GROQ_ANSWER_MODEL = os.getenv(
+    "GROQ_ANSWER_MODEL",
+    "openai/gpt-oss-120b",
+)
 
-    return list(dict.fromkeys([
-        settings.gemini_model,
-        *fallbacks,
-    ]))
+GROQ_CONNECT_TIMEOUT = 10.0
+GROQ_HTTP_TIMEOUT = 120.0
+
+QUERY_GENERATION_TIMEOUT = 30
+ANSWER_GENERATION_TIMEOUT = 90
 
 
-def get_error_status(exc):
-    """Extract an HTTP status code from Gemini SDK errors."""
+# ============================================================
+# GROQ API CLIENT
+# ============================================================
 
-    code = getattr(exc, "code", None)
-
-    if isinstance(code, int):
-        return code
-
-    status = getattr(exc, "status_code", None)
-
-    if isinstance(status, int):
-        return status
-
-    for value in (code, status):
-        if value is not None:
-            error_text = str(value)
-
-            for candidate in (408, 429, 500, 502, 503, 504):
-                if str(candidate) in error_text:
-                    return candidate
-
-    return None
-
-
-def is_temporary_error(exc):
-    if isinstance(exc, (asyncio.TimeoutError, TimeoutError)):
-        return True
-
-    return get_error_status(exc) in (
-        408, 429, 500, 502, 503, 504
-    )
-
-
-async def call_gemini(prompt: str, json_mode: bool = False) -> str:
+async def call_groq(
+    prompt: str,
+    model: str,
+    json_mode: bool = False,
+) -> str:
     """
-    Execute a Gemini request using the configured model fallback chain.
+    Execute a Groq chat completion request.
 
-    Each model is attempted once. Temporary failures and unavailable
-    models cause an immediate switch to the next model.
+    Uses Groq's OpenAI-compatible API.
     """
 
-    client = get_gemini_client()
-    settings = get_settings()
-
-    timeout_seconds = settings.gemini_request_timeout_ms / 1000
-
-    config = None
-
-    if json_mode:
-        config = types.GenerateContentConfig(
-            response_mime_type="application/json",
+    if not GROQ_API_KEY:
+        raise RuntimeError(
+            "GROQ_API_KEY is missing from the backend environment."
         )
 
-    for model in get_model_chain():
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json",
+    }
 
-        logger.info("ZERA trying Gemini model: %s", model)
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+    }
 
-        try:
-            response = await asyncio.wait_for(
-                client.aio.models.generate_content(
-                    model=model,
-                    contents=prompt,
-                    config=config,
-                ),
-                timeout=timeout_seconds,
-            )
+    if json_mode:
+        payload["response_format"] = {
+            "type": "json_object",
+        }
 
-            if not response.text:
-                raise RuntimeError(
-                    f"Gemini model {model} returned empty output."
-                )
-
-            logger.info(
-                "ZERA successfully generated response using %s",
-                model,
-            )
-
-            return response.text
-
-        except asyncio.TimeoutError:
-            logger.warning(
-                "Gemini model %s timed out after %s seconds.",
-                model,
-                timeout_seconds,
-            )
-
-        except Exception as exc:
-
-            status = get_error_status(exc)
-
-            if status == 404:
-                logger.warning(
-                    "Gemini model %s is unavailable: %s",
-                    model,
-                    exc,
-                )
-                continue
-
-            if is_temporary_error(exc):
-                logger.warning(
-                    "Gemini model %s temporarily unavailable: %s",
-                    model,
-                    exc,
-                )
-                continue
-
-            logger.exception(
-                "Non-retryable Gemini error for model %s",
-                model,
-            )
-            raise
-
-    raise RuntimeError(
-        "ZERA is temporarily unavailable. "
-        "All configured Gemini models failed."
+    logger.info(
+        "ZERA calling Groq model: %s",
+        model,
     )
 
+    timeout = httpx.Timeout(
+        GROQ_HTTP_TIMEOUT,
+        connect=GROQ_CONNECT_TIMEOUT,
+    )
 
-async def generate_research_queries(question: str) -> list[str]:
+    async with httpx.AsyncClient(timeout=timeout) as client:
+
+        response = await client.post(
+            GROQ_API_URL,
+            headers=headers,
+            json=payload,
+        )
+
+        if response.is_error:
+            logger.error(
+                "Groq API error | model=%s | status=%s | response=%s",
+                model,
+                response.status_code,
+                response.text[:2000],
+            )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+    choices = data.get("choices") or []
+
+    if not choices:
+        raise RuntimeError(
+            f"Groq model {model} returned no choices."
+        )
+
+    message = choices[0].get("message") or {}
+
+    content = message.get("content")
+
+    if isinstance(content, list):
+        content = "".join(
+            item.get("text", "")
+            for item in content
+            if isinstance(item, dict)
+        )
+
+    if not isinstance(content, str) or not content.strip():
+        raise RuntimeError(
+            f"Groq model {model} returned empty output."
+        )
+
+    logger.info(
+        "ZERA successfully generated response using Groq model: %s",
+        model,
+    )
+
+    return content.strip()
+
+
+# ============================================================
+# RESEARCH QUERY GENERATION
+# ============================================================
+
+async def generate_research_queries(
+    question: str,
+) -> list[str]:
     """
     Convert a conversational question into focused academic
     literature search queries.
+
+    Maximum execution time: 30 seconds.
     """
 
     prompt = f"""
@@ -183,27 +171,42 @@ RULES:
 6. Each query must be independently useful for academic search.
 7. Do not invent a different research topic.
 
-Return ONLY a JSON array of strings.
+Return ONLY a JSON object containing a "queries" array.
 
 Example:
-[
-  "parameter efficient fine tuning large language models",
-  "low rank adaptation LoRA large language models",
-  "prompt tuning and adapter based fine tuning",
-  "parameter efficient fine tuning comparative evaluation"
-]
+{{
+  "queries": [
+    "parameter efficient fine tuning large language models",
+    "low rank adaptation LoRA large language models",
+    "prompt tuning and adapter based fine tuning",
+    "parameter efficient fine tuning comparative evaluation"
+  ]
+}}
 """
 
     try:
-        response_text = await call_gemini(
-            prompt=prompt,
-            json_mode=True,
+        response_text = await asyncio.wait_for(
+            call_groq(
+                prompt=prompt,
+                model=GROQ_QUERY_MODEL,
+                json_mode=True,
+            ),
+            timeout=QUERY_GENERATION_TIMEOUT,
         )
 
-        queries = json.loads(response_text)
+        result = json.loads(response_text)
+
+        if isinstance(result, dict):
+            queries = result.get("queries")
+        elif isinstance(result, list):
+            queries = result
+        else:
+            queries = None
 
         if not isinstance(queries, list):
-            raise ValueError("Gemini returned an invalid query format.")
+            raise ValueError(
+                "Groq returned an invalid query format."
+            )
 
         cleaned = [
             item.strip()
@@ -212,24 +215,44 @@ Example:
         ]
 
         if not cleaned:
-            raise ValueError("No valid search queries were generated.")
+            raise ValueError(
+                "No valid search queries were generated."
+            )
 
         return list(dict.fromkeys(cleaned))[:5]
 
-    except Exception as exc:
+    except asyncio.TimeoutError:
         logger.warning(
-            "Query generation failed. Using original question: %s",
-            exc,
+            "Groq query generation exceeded %s seconds. "
+            "Using the original research question.",
+            QUERY_GENERATION_TIMEOUT,
         )
 
-        # Preserve research functionality when query generation fails.
         return [question]
 
+    except Exception:
+        logger.exception(
+            "Groq query generation failed. "
+            "Using the original research question."
+        )
+
+        return [question]
+
+
+# ============================================================
+# RESEARCH ANSWER GENERATION
+# ============================================================
 
 async def generate_research_answer(
     question: str,
     papers: list[dict],
 ) -> str:
+    """
+    Generate a grounded academic research synthesis
+    using retrieved paper abstracts.
+
+    Maximum execution time: 90 seconds.
+    """
 
     paper_context = []
 
@@ -240,21 +263,36 @@ async def generate_research_answer(
         if not abstract:
             continue
 
+        authors = paper.get("authors") or []
+
+        if not isinstance(authors, list):
+            authors = []
+
+        author_names = [
+            str(author)
+            for author in authors
+        ]
+
         paper_context.append(
             f"""
 [SOURCE {index}]
 Title: {paper.get("title")}
-Authors: {", ".join(paper.get("authors") or [])}
+Authors: {", ".join(author_names)}
 Publication date: {paper.get("publication_date")}
 DOI: {paper.get("doi")}
 
 Abstract:
-{abstract[:6000]}
+{abstract[:2500]}
 """
         )
 
     context = "\n\n".join(paper_context)
 
+    if not context.strip():
+        return (
+            "I couldn't find research papers with usable abstracts "
+            "for this question. Try a more specific research topic."
+        )
 
     prompt = f"""
 You are ZERA, the research intelligence assistant inside Moudel AI.
@@ -339,8 +377,23 @@ STYLE:
 Return the answer in Markdown.
 """
 
+    try:
+        return await asyncio.wait_for(
+            call_groq(
+                prompt=prompt,
+                model=GROQ_ANSWER_MODEL,
+                json_mode=False,
+            ),
+            timeout=ANSWER_GENERATION_TIMEOUT,
+        )
 
-    return await call_gemini(
-        prompt=prompt,
-        json_mode=False,
-    )
+    except asyncio.TimeoutError as exc:
+        logger.error(
+            "Groq research answer exceeded %s seconds.",
+            ANSWER_GENERATION_TIMEOUT,
+        )
+
+        raise TimeoutError(
+            "Research answer generation exceeded 90 seconds. "
+            "Please try again."
+        ) from exc
