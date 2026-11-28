@@ -1,10 +1,13 @@
 
 import httpx
 
+from app.config import get_settings
+
+
 OPENALEX_URL = "https://api.openalex.org"
 TIMEOUT = httpx.Timeout(20.0, connect=5.0)
 
-# Resolve categories against OpenAlex's own taxonomy.
+
 FIELD_CATEGORIES = {
     "computer-science": ["Computer Science"],
     "engineering": ["Engineering"],
@@ -23,6 +26,19 @@ CATEGORY_ALIASES = {
     "physics": "physics",
     "all research": None,
 }
+
+
+def get_openalex_params():
+    settings = get_settings()
+
+    if not settings.openalex_api_key:
+        raise RuntimeError(
+            "OPENALEX_API_KEY is not configured in backend/.env."
+        )
+
+    return {
+        "api_key": settings.openalex_api_key,
+    }
 
 
 def reconstruct_abstract(inverted_index):
@@ -81,8 +97,6 @@ def normalize_paper(paper):
 
 
 async def resolve_field_ids(client, field_names):
-    """Find exact OpenAlex field IDs for the requested field names."""
-
     field_ids = []
 
     for field_name in field_names:
@@ -94,6 +108,7 @@ async def resolve_field_ids(client, field_names):
                 "select": "id,display_name",
             },
         )
+
         response.raise_for_status()
 
         for field in response.json().get("results", []):
@@ -109,8 +124,6 @@ async def resolve_field_ids(client, field_names):
 
 
 async def resolve_ai_subfield_ids(client):
-    """Find exact Artificial Intelligence subfield IDs."""
-
     response = await client.get(
         f"{OPENALEX_URL}/subfields",
         params={
@@ -119,6 +132,7 @@ async def resolve_ai_subfield_ids(client):
             "select": "id,display_name",
         },
     )
+
     response.raise_for_status()
 
     subfield_ids = []
@@ -140,6 +154,7 @@ async def resolve_category_filter(client, category):
         return None
 
     normalized = category.strip().casefold()
+
     category_key = CATEGORY_ALIASES.get(
         normalized,
         normalized,
@@ -202,9 +217,15 @@ async def search_openalex(
     if year is not None:
         filters.append(f"publication_year:{year}")
 
-    async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+    # Load authenticated OpenAlex request parameters.
+    auth_params = get_openalex_params()
 
-        # Resolve the selected discipline.
+    async with httpx.AsyncClient(
+        timeout=TIMEOUT,
+        params=auth_params,
+    ) as client:
+
+        # Resolve selected discipline.
         category_filter = await resolve_category_filter(
             client,
             category,
@@ -213,7 +234,6 @@ async def search_openalex(
         if category_filter:
             filters.append(category_filter)
 
-        # Build OpenAlex request parameters.
         params = {
             "page": page,
             "per-page": limit,
@@ -225,15 +245,12 @@ async def search_openalex(
             ),
         }
 
-        # Only add search when the user actually entered a query.
         if query and query.strip():
             params["search"] = query.strip()
 
-        # Apply category and publication year filters.
         if filters:
             params["filter"] = ",".join(filters)
 
-        # Apply sorting.
         if sort_options[sort]:
             params["sort"] = sort_options[sort]
 
@@ -253,6 +270,55 @@ async def search_openalex(
         "query": query,
         "category": category,
         "year": year,
+        "results": [
+            normalize_paper(paper)
+            for paper in payload.get("results", [])
+        ],
+    }
+
+
+async def fetch_openalex_cursor_page(
+    query: str,
+    cursor: str = "*",
+    per_page: int = 200,
+):
+    if not query or not query.strip():
+        raise ValueError("OpenAlex search query cannot be empty.")
+
+    if not 1 <= per_page <= 200:
+        raise ValueError("per_page must be between 1 and 200.")
+
+    auth_params = get_openalex_params()
+
+    params = {
+        "search": query.strip(),
+        "cursor": cursor,
+        "per-page": per_page,
+        "select": (
+            "id,doi,title,publication_date,authorships,"
+            "abstract_inverted_index,primary_location,"
+            "best_oa_location,open_access,cited_by_count,"
+            "type,primary_topic"
+        ),
+    }
+
+    async with httpx.AsyncClient(
+        timeout=TIMEOUT,
+        params=auth_params,
+    ) as client:
+        response = await client.get(
+            f"{OPENALEX_URL}/works",
+            params=params,
+        )
+
+        response.raise_for_status()
+
+    payload = response.json()
+    meta = payload.get("meta", {})
+
+    return {
+        "total_count": meta.get("count", 0),
+        "next_cursor": meta.get("next_cursor"),
         "results": [
             normalize_paper(paper)
             for paper in payload.get("results", [])

@@ -1,4 +1,6 @@
 
+import { supabase } from './supabase.js'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '')
 
 export class ApiError extends Error {
@@ -19,8 +21,24 @@ export async function apiRequest(
   }
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-
   const requestHeaders = new Headers(headers)
+
+  // Attach the current Supabase access token.
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession()
+
+  if (sessionError) {
+    throw new Error('Unable to retrieve your login session.')
+  }
+
+  if (session?.access_token && !requestHeaders.has('Authorization')) {
+    requestHeaders.set(
+      'Authorization',
+      `Bearer ${session.access_token}`,
+    )
+  }
 
   if (body !== undefined && !(body instanceof FormData)) {
     requestHeaders.set('Content-Type', 'application/json')

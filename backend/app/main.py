@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.routers.search.routes import router as search_router
+from app.routers.zera import router as zera_router
 
 import httpx
 
@@ -15,6 +16,13 @@ app = FastAPI(
     title=settings.app_name,
 )
 
+from app.routers import corpus
+
+app.include_router(
+    corpus.router,
+    prefix="/api/v1/corpus",
+    tags=["Research Corpus"],
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,6 +43,11 @@ app.include_router(
     tags=["Research Search"],
 )
 
+app.include_router(
+    zera_router,
+    prefix=f"{settings.api_v1_prefix}/zera",
+    tags=["ZERA"],
+)
 
 
 @app.delete("/api/v1/account")

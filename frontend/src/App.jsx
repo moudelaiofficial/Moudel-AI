@@ -15,6 +15,7 @@ import LibraryPage from './pages/Workspace/LibraryPage.jsx'
 import RecentPage from './pages/Workspace/RecentPage.jsx'
 import CollectionsPage from './pages/Workspace/CollectionsPage.jsx'
 import SettingsPage from './pages/Workspace/SettingsPage.jsx'
+import ZeraPage from './pages/Workspace/Zera.jsx'
 
 // Legal pages
 import PrivacyPolicy from './pages/legal/PrivacyPolicy.jsx'
@@ -211,6 +212,9 @@ export default function App() {
         <Route path="recent" element={<RecentPage />} />
         <Route path="collections" element={<CollectionsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+
+        {/* ZERA */}
+        <Route path="zera" element={<ZeraPage />} />
       </Route>
 
       {/* 404 */}

@@ -114,6 +114,7 @@ export default function WorkspaceHeader() {
                 ['Recent', '/workspace/recent'],
                 ['Collections', '/workspace/collections'],
                 ['Settings', '/workspace/settings'],
+                ['ZERA', '/workspace/zera'],
               ].map(([label, path]) => (
                 <button
                   key={path}

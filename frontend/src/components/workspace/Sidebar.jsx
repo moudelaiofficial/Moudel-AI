@@ -8,6 +8,7 @@ import {
   History,
   Library,
   Settings,
+  Sparkles,
 } from 'lucide-react'
 
 const navigation = [
@@ -31,6 +32,11 @@ const navigation = [
     label: 'Recent',
     path: '/workspace/recent',
     icon: History,
+  },
+  {
+  label: 'ZERA',
+  path: '/workspace/zera',
+  icon: Sparkles,
   },
 ]
 
