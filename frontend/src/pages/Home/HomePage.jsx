@@ -274,7 +274,7 @@ const features = [
           <History size={12} aria-hidden="true" /> Pick up where you left off
         </p>
         <p className="mt-1 font-serif text-lg text-[#1c1b19]">
-          Compare retrieval-based and long-context approaches.
+          Compare retrieval-based and long-context approache.
         </p>
       </div>
     ),
