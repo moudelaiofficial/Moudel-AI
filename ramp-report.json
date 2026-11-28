@@ -1,0 +1,378 @@
+{
+  "generated_at": "2026-11-26T05:15:20.245474+00:00",
+  "targets": [
+    "http://localhost:5173",
+    "http://localhost:8000"
+  ],
+  "findings": [
+    {
+      "severity": "HIGH",
+      "check": "HTTPS",
+      "target": "http://localhost:5173",
+      "result": "Target URL is not HTTPS",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "HTTP reachability",
+      "target": "http://localhost:5173",
+      "result": "HTTP 200",
+      "evidence": ""
+    },
+    {
+      "severity": "MEDIUM",
+      "check": "Header: HSTS",
+      "target": "http://localhost:5173",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "MEDIUM",
+      "check": "Header: CSP",
+      "target": "http://localhost:5173",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "MEDIUM",
+      "check": "Header: X-Content-Type-Options",
+      "target": "http://localhost:5173",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "LOW",
+      "check": "Header: Referrer-Policy",
+      "target": "http://localhost:5173",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "LOW",
+      "check": "Header: Permissions-Policy",
+      "target": "http://localhost:5173",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "LOW",
+      "check": "Header: X-Frame-Options (legacy; CSP frame-ancestors is preferred)",
+      "target": "http://localhost:5173",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "HTTPS redirect",
+      "target": "http://localhost:5173",
+      "result": "Request ended at non-HTTPS URL: http://localhost:5173/",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "HTTP methods",
+      "target": "http://localhost:5173",
+      "result": "OPTIONS HTTP 204; Allow=(not supplied); CORS methods=GET,HEAD,PUT,PATCH,POST,DELETE",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "HTTPS",
+      "target": "http://localhost:8000",
+      "result": "Target URL is not HTTPS",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "HTTP reachability",
+      "target": "http://localhost:8000",
+      "result": "HTTP 404",
+      "evidence": ""
+    },
+    {
+      "severity": "MEDIUM",
+      "check": "Header: HSTS",
+      "target": "http://localhost:8000",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "MEDIUM",
+      "check": "Header: CSP",
+      "target": "http://localhost:8000",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "MEDIUM",
+      "check": "Header: X-Content-Type-Options",
+      "target": "http://localhost:8000",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "LOW",
+      "check": "Header: Referrer-Policy",
+      "target": "http://localhost:8000",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "LOW",
+      "check": "Header: Permissions-Policy",
+      "target": "http://localhost:8000",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "LOW",
+      "check": "Header: X-Frame-Options (legacy; CSP frame-ancestors is preferred)",
+      "target": "http://localhost:8000",
+      "result": "Missing; assess whether it is applicable and configure at the edge/application.",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "HTTPS redirect",
+      "target": "http://localhost:8000",
+      "result": "Request ended at non-HTTPS URL: http://localhost:8000/",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "HTTP methods",
+      "target": "http://localhost:8000",
+      "result": "OPTIONS HTTP 404; Allow=(not supplied); CORS methods=(not supplied)",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "CORS trusted origin",
+      "target": "http://localhost:8000/api/v1/search/papers?page=1&limit=1",
+      "result": "http://localhost:5173 allowed (HTTP 200); credentials=true",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "CORS untrusted origin",
+      "target": "http://localhost:8000/api/v1/search/papers?page=1&limit=1",
+      "result": "Untrusted Origin not allowed (HTTP 400, ACAO=(absent))",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "Verbose error disclosure",
+      "target": "http://localhost:8000/__security_assessment_nonexistent_route__",
+      "result": "No common stack-trace markers found (HTTP 404); this is not proof of safe error handling.",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "Potential exposed sensitive file",
+      "target": "http://localhost:5173/.env",
+      "result": "HTTP 200; Content-Type=text/html; sample=' <!doctype html> <html lang=\"en\">   <head>     <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () '",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "Potential exposed sensitive file",
+      "target": "http://localhost:5173/.git/HEAD",
+      "result": "HTTP 200; Content-Type=text/html; sample=' <!doctype html> <html lang=\"en\">   <head>     <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () '",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "Potential exposed sensitive file",
+      "target": "http://localhost:5173/.git/config",
+      "result": "HTTP 200; Content-Type=text/html; sample=' <!doctype html> <html lang=\"en\">   <head>     <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () '",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "Potential exposed sensitive file",
+      "target": "http://localhost:5173/.DS_Store",
+      "result": "HTTP 200; Content-Type=text/html; sample=' <!doctype html> <html lang=\"en\">   <head>     <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () '",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "Potential exposed sensitive file",
+      "target": "http://localhost:5173/backup.zip",
+      "result": "HTTP 200; Content-Type=text/html; sample=' <!doctype html> <html lang=\"en\">   <head>     <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () '",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "Potential exposed sensitive file",
+      "target": "http://localhost:5173/backup.sql",
+      "result": "HTTP 200; Content-Type=text/html; sample=' <!doctype html> <html lang=\"en\">   <head>     <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () '",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "Potential exposed sensitive file",
+      "target": "http://localhost:5173/dump.sql",
+      "result": "HTTP 200; Content-Type=text/html; sample=' <!doctype html> <html lang=\"en\">   <head>     <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () '",
+      "evidence": ""
+    },
+    {
+      "severity": "HIGH",
+      "check": "Potential exposed sensitive file",
+      "target": "http://localhost:5173/database.sql",
+      "result": "HTTP 200; Content-Type=text/html; sample=' <!doctype html> <html lang=\"en\">   <head>     <script type=\"module\">import { injectIntoGlobalHook } from \"/@react-refresh\"; injectIntoGlobalHook(window); window.$RefreshReg$ = () '",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "Common endpoint reachable",
+      "target": "http://localhost:5173/phpinfo.php",
+      "result": "HTTP 200; Content-Type=text/html; review whether public exposure is intended.",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "Common endpoint reachable",
+      "target": "http://localhost:5173/server-status",
+      "result": "HTTP 200; Content-Type=text/html; review whether public exposure is intended.",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "Common endpoint reachable",
+      "target": "http://localhost:5173/actuator",
+      "result": "HTTP 200; Content-Type=text/html; review whether public exposure is intended.",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "Common endpoint reachable",
+      "target": "http://localhost:5173/actuator/env",
+      "result": "HTTP 200; Content-Type=text/html; review whether public exposure is intended.",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "Common endpoint reachable",
+      "target": "http://localhost:5173/debug",
+      "result": "HTTP 200; Content-Type=text/html; review whether public exposure is intended.",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "Common endpoint reachable",
+      "target": "http://localhost:5173/openapi.json",
+      "result": "HTTP 200; Content-Type=text/html; review whether public exposure is intended.",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "Common endpoint reachable",
+      "target": "http://localhost:5173/docs",
+      "result": "HTTP 200; Content-Type=text/html; review whether public exposure is intended.",
+      "evidence": ""
+    },
+    {
+      "severity": "INFO",
+      "check": "Common endpoint reachable",
+      "target": "http://localhost:5173/redoc",
+      "result": "HTTP 200; Content-Type=text/html; review whether public exposure is intended.",
+      "evidence": ""
+    }
+  ],
+  "manual_tests_required": {
+    "A01 Broken Access Control": [
+      "IDOR: create two test users; attempt cross-user access to each other's paper, collection, file and chat IDs.",
+      "Horizontal/vertical privilege escalation: verify every admin and user route enforces server-side role checks.",
+      "SSRF: review every server-side URL fetch/import feature; use a controlled callback server in staging. Never probe cloud metadata on production.",
+      "Forced browsing: enumerate documented routes and verify unauthenticated access is denied where required.",
+      "Path traversal: test file-download handlers using harmless traversal canaries in staging; verify canonical-path containment.",
+      "HTTP method tampering: verify authorization is identical across GET/POST/PUT/PATCH/DELETE/HEAD; do not issue destructive methods to production data.",
+      "CSRF: for cookie-authenticated state-changing routes, verify SameSite, origin checks and CSRF tokens where applicable."
+    ],
+    "A02 Security Misconfiguration": [
+      "Subdomain takeover: review all DNS records and confirm each CNAME target is actively claimed; do not claim third-party resources.",
+      "Cloud storage: inspect Supabase Storage bucket policies for unintended public read/write and test with separate user accounts.",
+      "Open ports: run an approved port scan against your own hosting provider's permitted targets; shared Render/Vercel IPs may be multi-tenant.",
+      "XXE: inspect XML parsers and disable external entities/DTD processing; only test a dedicated staging endpoint.",
+      "Review deployment settings, debug flags, directory listing and admin/debug routes."
+    ],
+    "A03 Software Supply Chain Failures": [
+      "Run npm audit (frontend) and pip-audit (backend); review and remediate findings rather than blindly applying force fixes.",
+      "Review lockfiles, dependency provenance, abandoned packages and transitive dependencies.",
+      "Check CI/CD logs and build artifacts for secrets; rotate any exposed credentials.",
+      "Review third-party scripts and analytics loading/consent behavior.",
+      "SRI is relevant to externally hosted static scripts/styles; prefer pinned dependencies and self-hosting where practical."
+    ],
+    "A04 Cryptographic Failures": [
+      "Verify password storage is delegated to Supabase Auth and no password is logged or stored by Moudel.",
+      "Inspect JWT issuer, audience, signature algorithm, expiry and key rotation on the backend.",
+      "Verify access/refresh tokens never appear in URLs, logs, analytics or error reports.",
+      "Verify authenticated/private responses use suitable Cache-Control directives (often no-store).",
+      "Review TLS configuration at the actual edge providers; this script only observes the negotiated connection."
+    ],
+    "A05 Injection": [
+      "Perform parameterized-query review for SQL; review any Mongo/JSON query construction for operator injection.",
+      "Test reflected/stored/DOM XSS with harmless canaries in staging and inspect output encoding/CSP.",
+      "Review subprocess/shell usage; avoid shell=True with user-controlled values.",
+      "Review template rendering and disable unsafe evaluation.",
+      "For AI/RAG: test prompt injection using a controlled test corpus; ensure retrieved text is treated as untrusted data and tools enforce authorization independently.",
+      "Review header construction for CRLF injection and validate/encode user-controlled header values."
+    ],
+    "A06 Insecure Design & Business Logic": [
+      "Test concurrent duplicate actions with isolated test records and idempotency keys.",
+      "Test multi-step flows by skipping steps and replaying requests using test accounts.",
+      "Reject unexpected/privileged fields (e.g. is_admin, owner_id) through explicit request schemas and server-side ownership assignment.",
+      "GraphQL-specific checks apply only if GraphQL is deployed; disable production introspection if not needed and bound query depth/complexity."
+    ],
+    "A07 Authentication & Session Failures": [
+      "Verify rate limits on login, signup, password reset and verification resend; test only with test accounts.",
+      "Use generic authentication/reset responses to reduce account enumeration.",
+      "Review MFA enforcement for privileged accounts if supported.",
+      "Validate JWT signature/algorithm/issuer/audience/expiry; reject none, wrong-key and expired tokens.",
+      "If OAuth is used, validate redirect_uri and state; otherwise mark not applicable.",
+      "Verify cookies use Secure, HttpOnly and appropriate SameSite; verify logout/revocation semantics."
+    ],
+    "A08 Software or Data Integrity Failures": [
+      "For uploads: allow-list file types, inspect content signatures, enforce size limits, rename files, store outside executable web roots and scan where appropriate.",
+      "Test SVG/HTML/polyglot upload handling in staging; serve user files with safe content types and disposition.",
+      "Review JSON parsing and object merging for prototype-pollution patterns; avoid unsafe deserialization."
+    ],
+    "A09 Security Logging & Alerting": [
+      "Verify failed logins, authorization failures, account deletion, role changes and suspicious rate-limit events are logged.",
+      "Never log passwords, full access tokens, refresh tokens or sensitive document contents.",
+      "Confirm logs are access-controlled, retained appropriately and alerts reach an owner."
+    ],
+    "A10 Mishandling of Exceptional Conditions": [
+      "In staging, force dependency/database timeouts and verify protected routes fail closed.",
+      "Trigger safe malformed-input and 4xx/5xx cases; ensure stack traces, SQL, filesystem paths and secrets are not returned.",
+      "Review exception handlers so errors never turn authorization checks into allow decisions."
+    ]
+  },
+  "load_test": {
+    "scenario": "ramp",
+    "duration_seconds": 30,
+    "workers_max": 5,
+    "global_rps_max": 2.0,
+    "requests_submitted": 36,
+    "requests_completed": 36,
+    "status_counts": {
+      "200": 36
+    },
+    "error_rate": 0.0,
+    "latency_ms": {
+      "min": 6.55,
+      "median": 2997.34,
+      "p95": 3729.62,
+      "p99": 3942.06,
+      "max": 3942.06
+    },
+    "breakpoint_stages": [],
+    "errors_sample": [],
+    "note": "GET-only low-rate approximation, not a distributed capacity test or full validation of stateful user journeys."
+  },
+  "limitations": [
+    "A clean result does not mean the application is secure.",
+    "This script does not exploit authorization, injection, SSRF, file upload, race conditions or authentication workflows.",
+    "Only run active tests against assets you own or are explicitly authorized to assess."
+  ]
+}
